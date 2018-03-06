@@ -340,7 +340,7 @@ void init(int argc, char* argv[])
 int main(int argc, char* argv[])
 {
 	// INSERT HERE YOUR CODE FOR PARSING NFF FILES
-	//Something something
+	
 	scene = new Scene();
 	if (!(scene->load_nff("jap.nff"))) return 0;
 	RES_X = scene->GetCamera()->GetResX();
