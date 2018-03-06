@@ -49,16 +49,20 @@ int draw_mode = 1;
 int WindowHandle = 0;
 
 /*NFF FILE*/
+FILE * nff;
 
 float background[3];
 
+char* str;
+
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
-
-/*Color rayTracing(Ray ray, int depth, float RefrIndex)
+/*
+Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
-//INSERT HERE YOUR CODE
-}*/
 
+//INSERT HERE YOUR CODE
+}
+*/
 /////////////////////////////////////////////////////////////////////// ERRORS
 
 bool isOpenGLError() {
@@ -333,30 +337,71 @@ void init(int argc, char* argv[])
 	setupGLUT(argc, argv);
 	setupGLEW();
 	std::cerr << "CONTEXT: OpenGL v" << glGetString(GL_VERSION) << std::endl;
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearColor(background[0], background[1], background[2], 1.0f);
 	createShaderProgram();
 	createBufferObjects();
 	setupCallbacks();
 }
 
+void setBackground() {
+
+	if (fscanf(nff, " %f %f %f", &background[0], &background[1], &background[2]) == 0) {
+		background[0] = 0;
+		background[1] = 0;
+		background[2] = 0;
+	}
+}
+
 int main(int argc, char* argv[])
 {
-	FILE * nff;
+
+	int ch;
+
 	nff = fopen("input_file.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
 
-	fscanf(nff, "b %f %f %f", &background[0], &background[1], &background[2]);
+	while ((ch = getc(nff)) != EOF) {
+		switch (ch) {
+		case ' ':
+		case '\t':
+		case '\n':
+		case '\f':
+		case '\r':
+			continue;
+		case 'b':
+			setBackground();
+			printf("b %f %f %f\n", background[0], background[1], background[2]);
+			break;
+			/* Background colour. */
+		case 'v':
+			printf("VIEWPOINT SECTION\n");
+			break;
+			/* Viewpoint Section */
+		case 'from':
+			printf("from\n");
+			break;
+			/* Viewpoint Section */
+		default:
+			continue;
+			//printf("nada para eu parsar\n");
+			//exit(1);
+		}
+	}
 
-	printf("b %f %f %f\n", background[0], background[1], background[2]);
+
+
+	/*fscanf(nff, "b %f %f %f", &background[0], &background[1], &background[2]);
+
+	printf("b %f %f %f\n", background[0], background[1], background[2]);*/
 
 
 
 
 	/*INSERT HERE YOUR CODE FOR PARSING NFF FILES*/
 	//scene = new Scene();
-	//if (!(scene->load_nff("jap.nff"))) return 0;
+	//if (!(scene->load_nff("input_file.nff"))) return 0;
 	//RES_X = scene->GetCamera()->GetResX();
 	//RES_Y = scene->GetCamera()->GetResY();
 
@@ -381,14 +426,24 @@ int main(int argc, char* argv[])
 	}
 	printf("resx = %d  resy= %d.\n", RES_X, RES_Y);
 
+	
+
+
+
 	vertices = (float*)malloc(size_vertices);
 	if (vertices == NULL) exit(1);
 
 	colors = (float*)malloc(size_colors);
 	if (colors == NULL) exit(1);
 
+
+
+
 	init(argc, argv);
+	/* STOP PROGRAM TO TEST*/
+	scanf("hello %s", str);
 	glutMainLoop();
+
 	exit(EXIT_SUCCESS);
 }
 ///////////////////////////////////////////////////////////////////////
