@@ -81,7 +81,7 @@ void checkOpenGLError(std::string error)
 {
 	if (isOpenGLError()) {
 		std::cerr << error << std::endl;
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
 	}
 }
 /////////////////////////////////////////////////////////////////////// SHADERs
@@ -175,6 +175,7 @@ void createBufferObjects()
 	glDisableVertexAttribArray(VERTEX_COORD_ATTRIB);
 	glDisableVertexAttribArray(COLOR_ATTRIB);
 	checkOpenGLError("ERROR: Could not create VAOs and VBOs.");
+
 }
 
 void destroyBufferObjects()
@@ -231,9 +232,9 @@ void renderScene()
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
-			//colors[index_col++] = (float)color.r;
-			//colors[index_col++] = (float)color.g;
-			//colors[index_col++] = (float)color.b;
+			//colors[index_col++] = (float)background[0];
+			//colors[index_col++] = (float)background[1];
+			//colors[index_col++] = (float)background[2];
 
 			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
 				drawPoints();
@@ -339,8 +340,9 @@ void init(int argc, char* argv[])
 	std::cerr << "CONTEXT: OpenGL v" << glGetString(GL_VERSION) << std::endl;
 	glClearColor(background[0], background[1], background[2], 1.0f);
 	createShaderProgram();
-	createBufferObjects();
+	//createBufferObjects();
 	setupCallbacks();
+
 }
 
 void setBackground() {
@@ -374,7 +376,7 @@ int main(int argc, char* argv[])
 			setBackground();
 			printf("b %f %f %f\n", background[0], background[1], background[2]);
 			break;
-			/* Background colour. */
+			/* Background color. */
 		case 'v':
 			printf("VIEWPOINT SECTION\n");
 			break;
@@ -426,7 +428,7 @@ int main(int argc, char* argv[])
 	}
 	printf("resx = %d  resy= %d.\n", RES_X, RES_Y);
 
-	
+	/* STOP PROGRAM TO TEST*/
 
 
 
@@ -440,8 +442,6 @@ int main(int argc, char* argv[])
 
 
 	init(argc, argv);
-	/* STOP PROGRAM TO TEST*/
-	scanf("hello %s", str);
 	glutMainLoop();
 
 	exit(EXIT_SUCCESS);
