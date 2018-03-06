@@ -14,11 +14,9 @@
 #include <sstream>
 #include <string>
 #include <stdio.h>
-
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-
-#include "scene.h"
+//#include "scene.h"
 
 #define CAPTION "ray tracer"
 
@@ -42,7 +40,7 @@ GLuint VboId[2];
 GLuint VertexShaderId, FragmentShaderId, ProgramId;
 GLint UniformId;
 
-Scene* scene = NULL;
+//Scene* scene = NULL;
 int RES_X, RES_Y;
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
@@ -50,12 +48,16 @@ int draw_mode = 1;
 
 int WindowHandle = 0;
 
+/*NFF FILE*/
+
+float background[3];
+
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
-Color rayTracing(Ray ray, int depth, float RefrIndex)
+/*Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
-	INSERT HERE YOUR CODE
-}
+//INSERT HERE YOUR CODE
+}*/
 
 /////////////////////////////////////////////////////////////////////// ERRORS
 
@@ -219,15 +221,15 @@ void renderScene()
 		for (int x = 0; x < RES_X; x++)
 		{
 
-			YOUR 2 FUNTIONS:
-			ray = calculate PrimaryRay(x, y);
-			color = rayTracing(ray, 1, 1.0);
+			//YOUR 2 FUNTIONS:
+			//ray = calculate PrimaryRay(x, y);
+			//color = rayTracing(ray, 1, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
-			colors[index_col++] = (float)color.r;
-			colors[index_col++] = (float)color.g;
-			colors[index_col++] = (float)color.b;
+			//colors[index_col++] = (float)color.r;
+			//colors[index_col++] = (float)color.g;
+			//colors[index_col++] = (float)color.b;
 
 			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
 				drawPoints();
@@ -339,12 +341,24 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	// INSERT HERE YOUR CODE FOR PARSING NFF FILES
-	
-	scene = new Scene();
-	if (!(scene->load_nff("jap.nff"))) return 0;
-	RES_X = scene->GetCamera()->GetResX();
-	RES_Y = scene->GetCamera()->GetResY();
+	FILE * nff;
+	nff = fopen("input_file.nff", "r");
+	if (nff == NULL) {
+		return 0;
+	}
+
+	fscanf(nff, "b %f %f %f", &background[0], &background[1], &background[2]);
+
+	printf("b %f %f %f\n", background[0], background[1], background[2]);
+
+
+
+
+	/*INSERT HERE YOUR CODE FOR PARSING NFF FILES*/
+	//scene = new Scene();
+	//if (!(scene->load_nff("jap.nff"))) return 0;
+	//RES_X = scene->GetCamera()->GetResX();
+	//RES_Y = scene->GetCamera()->GetResY();
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
@@ -378,3 +392,4 @@ int main(int argc, char* argv[])
 	exit(EXIT_SUCCESS);
 }
 ///////////////////////////////////////////////////////////////////////
+
