@@ -44,7 +44,7 @@ GLint UniformId;
 int RES_X, RES_Y;
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
-int draw_mode = 1;
+int draw_mode = 2;
 
 int WindowHandle = 0;
 
@@ -232,9 +232,9 @@ void renderScene()
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
-			//colors[index_col++] = (float)background[0];
-			//colors[index_col++] = (float)background[1];
-			//colors[index_col++] = (float)background[2];
+			colors[index_col++] = (float)background[0];
+			colors[index_col++] = (float)background[1];
+			colors[index_col++] = (float)background[2];
 
 			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
 				drawPoints();
@@ -338,9 +338,10 @@ void init(int argc, char* argv[])
 	setupGLUT(argc, argv);
 	setupGLEW();
 	std::cerr << "CONTEXT: OpenGL v" << glGetString(GL_VERSION) << std::endl;
+	printf("b %f %f %f\n", background[0], background[1], background[2]);
 	glClearColor(background[0], background[1], background[2], 1.0f);
 	createShaderProgram();
-	//createBufferObjects();
+	createBufferObjects();
 	setupCallbacks();
 
 }
@@ -374,7 +375,7 @@ int main(int argc, char* argv[])
 			continue;
 		case 'b':
 			setBackground();
-			printf("b %f %f %f\n", background[0], background[1], background[2]);
+			//printf("b %f %f %f\n", background[0], background[1], background[2]);
 			break;
 			/* Background color. */
 		case 'v':
