@@ -24,6 +24,8 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 6
+#define MAX_LIGHTS 6
+
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -51,7 +53,9 @@ int WindowHandle = 0;
 /*NFF FILE*/
 FILE * nff;
 
-float background[3];
+float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][3];
+
+int resolution[2];
 
 char* str;
 
@@ -338,7 +342,6 @@ void init(int argc, char* argv[])
 	setupGLUT(argc, argv);
 	setupGLEW();
 	std::cerr << "CONTEXT: OpenGL v" << glGetString(GL_VERSION) << std::endl;
-	printf("b %f %f %f\n", background[0], background[1], background[2]);
 	glClearColor(background[0], background[1], background[2], 1.0f);
 	createShaderProgram();
 	createBufferObjects();
@@ -347,18 +350,52 @@ void init(int argc, char* argv[])
 }
 
 void setBackground() {
-
-	if (fscanf(nff, " %f %f %f", &background[0], &background[1], &background[2]) == 0) {
+	if (fscanf(nff, " %g %g %g", &background[0], &background[1], &background[2]) == 0) {
 		background[0] = 0;
 		background[1] = 0;
 		background[2] = 0;
 	}
 }
 
+void setF() {
+	if (fscanf(nff, "rom %g %g %g", &f[0], &f[1], &f[2]) != 0) {
+		printf("FROM: %g %g %g\n", f[0], f[1], f[2]);
+	}
+	else {
+		printf("not yet\n");
+	}
+}
+
+void setA() {
+	if (fscanf(nff, "t %g %g %g", &at[0], &at[1], &at[2]) != 0) {
+		printf("AT: %g %g %g\n", at[0], at[1], at[2]);
+	}
+	else if (fscanf(nff, "ngle %g", &angle) != 0) {
+		printf("ANGLE: %g\n", angle);
+	}
+}
+
+void setUp() {
+	if (fscanf(nff, "p %g %g %g", &up[0], &up[1], &up[2]) != 0) {
+		printf("UP: %g %g %g\n", up[0], up[1], up[2]);
+	}
+}
+
+void setHither() {
+	if (fscanf(nff, "ither %g", &hither) != 0) {
+		printf("HITHER: %g \n", hither);
+	}
+}
+
+void setResolution() {
+	if (fscanf(nff, "esolution %d %d", &resolution[0], &resolution[1]) != 0) {
+		printf("RESOLUTION: %d %d\n", resolution[0], resolution[1]);
+	}
+}
+
 int main(int argc, char* argv[])
 {
-
-	int ch;
+	char ch;
 
 	nff = fopen("input_file.nff", "r");
 	if (nff == NULL) {
@@ -375,33 +412,43 @@ int main(int argc, char* argv[])
 			continue;
 		case 'b':
 			setBackground();
-			//printf("b %f %f %f\n", background[0], background[1], background[2]);
+			printf("BACKGROUND: %f %f %f\n", background[0], background[1], background[2]);
 			break;
 			/* Background color. */
 		case 'v':
 			printf("VIEWPOINT SECTION\n");
 			break;
 			/* Viewpoint Section */
-		case 'from':
-			printf("from\n");
+		case 'f':
+			setF();
 			break;
-			/* Viewpoint Section */
+			/* From and F Section*/
+		case 'a':
+			setA();
+			break;
+			/* Angle and at Section*/
+		case 'u':
+			setUp();
+			break;
+			/* Up Vector Section*/
+		case 'h':
+			setHither();
+			break;
+			/* Hither Section*/
+		case 'r':
+			setResolution();
+			break;
+			/* Resolution Section*/
+		case 'l':
+			//setLight();
+			break;
+			/* Light Section*/
 		default:
-			continue;
-			//printf("nada para eu parsar\n");
+			break;
 			//exit(1);
 		}
 	}
-
-
-
-	/*fscanf(nff, "b %f %f %f", &background[0], &background[1], &background[2]);
-
-	printf("b %f %f %f\n", background[0], background[1], background[2]);*/
-
-
-
-
+	printf("\n\n");
 	/*INSERT HERE YOUR CODE FOR PARSING NFF FILES*/
 	//scene = new Scene();
 	//if (!(scene->load_nff("input_file.nff"))) return 0;
