@@ -46,7 +46,7 @@ GLint UniformId;
 int RES_X, RES_Y;
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
-int draw_mode = 2;
+int draw_mode = 0;
 
 int WindowHandle = 0;
 
@@ -452,8 +452,8 @@ int main(int argc, char* argv[])
 	/*INSERT HERE YOUR CODE FOR PARSING NFF FILES*/
 	//scene = new Scene();
 	//if (!(scene->load_nff("input_file.nff"))) return 0;
-	//RES_X = scene->GetCamera()->GetResX();
-	//RES_Y = scene->GetCamera()->GetResY();
+	RES_X = resolution[0];
+	RES_Y = resolution[1];
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
