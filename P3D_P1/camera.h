@@ -11,7 +11,7 @@ struct _Camera {
 };
 typedef struct _Camera Camera;
 
-_Camera startCam(Camera c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double near, double far, int ResX, int ResY)
+_Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double near, double far, int ResX, int ResY)
 {
 	//c->eye = eye;
 	//c->at = at;
@@ -22,8 +22,8 @@ _Camera startCam(Camera c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double near,
 	printf("Distância da camara: %lf\n", df);
 
 	
-	c.h = (float) 2 * df * tan(fovy / 2);
-	printf("Altura: %f\n", c.h);
+	//c->h = (float) 2 * df * tan(fovy / 2);
+	//printf("Altura: %f\n", c->h);
 
 	//double dist = 				//Field of vision size, norma de vetores
 	//c->h = 
