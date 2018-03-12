@@ -61,8 +61,6 @@ int resolution[2];
 
 char* str;
 
-Camera * globalCam;
-
 /* Helper Structures */
 struct Color
 {
@@ -548,10 +546,11 @@ int main(int argc, char* argv[])
 	RES_Y = resolution[1];
 
 	// Setup camera
-	Vec3 *eyeVec = new Vec3(f[0], f[1], f[2]);
-	Vec3 *atVec = new Vec3(at[0], at[1], at[2]);
-	Vec3 *upVec = new Vec3(up[0], up[1], up[2]);
-	//globalCam = startCam(globalcam, eyeVec, atVec, upVec, fov, near, far, resX, resY);
+	Vec3 eyeVec = Vec3(f[0], f[1], f[2]);
+	Vec3 atVec = Vec3(at[0], at[1], at[2]);
+	Vec3 upVec = Vec3(up[0], up[1], up[2]);
+	Camera globalCam;
+	globalCam = startCam(globalCam, eyeVec, atVec, upVec, angle, 1, 1, RES_X, RES_Y);
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);

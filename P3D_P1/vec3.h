@@ -12,6 +12,10 @@ struct Vec3 {
 		float mg = sqrt(x*x + y * y + z * z);
 		return Vec3(x / mg, y / mg, z / mg);
 	}
+	double module() const {
+		double df = sqrt((x*x) + (y*y) + (z*z));
+		return df;
+	}
 } ;
 
 
