@@ -262,3 +262,7 @@ __pycache__/
 
 *.dll
 *.vcxproj
+
+P3D_P1/out\.ppm
+
+P3D_P1/input_file\.nff

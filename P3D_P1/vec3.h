@@ -1,3 +1,6 @@
+#ifndef _VEC3H_
+#define _VEC3H_
+
 struct Vec3 {
 	float x, y, z;
 	Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
@@ -10,3 +13,6 @@ struct Vec3 {
 		return Vec3(x / mg, y / mg, z / mg);
 	}
 } ;
+
+
+#endif
