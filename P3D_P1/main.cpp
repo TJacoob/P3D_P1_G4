@@ -69,8 +69,7 @@ struct Color
 
 struct Ray
 {
-	vec3 origin;
-	vec3 direction;
+	Vec3 origin, direction;
 };
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
