@@ -16,7 +16,7 @@ struct Vec3 {
 		double df = sqrt((x*x) + (y*y) + (z*z));
 		return df;
 	}
-} ;
+};
 
 
 #endif

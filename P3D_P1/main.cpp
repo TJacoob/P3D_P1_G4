@@ -82,9 +82,25 @@ struct Sphere
 	Vec3 normalize(Vec3 pi, Vec3 center, float radius) {
 		return (pi - center) / radius;
 	}
+	bool intersect(Ray ray, float t) const {
+		Vec3 o = ray.origin;
+		Vec3 d = ray.direction;
+		Vec3 oc = o - center;
+		float b = 2 * dot(oc, d);
+		float c = dot(oc, oc) - radius * radius;
+		float disc = b * b - 4 * c;
+		if (disc < 1e-4) return false;
+		disc = sqrt(disc);
+		float t0 = -b - disc;
+		float t1 = -b + disc;
+		t = (t0 < t1) ? t0 : t1;
+		return true;
+	}
 };
 
-
+float dot(const Vec3 a, const Vec3 b) {
+	return (a.x*b.x + a.y*b.y + a.z*b.z);
+}
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
@@ -444,17 +460,17 @@ void setSphere() {
 	int i = 0;
 
 	while (i < MAX_SPHERE) {
-	if (sphere[i][0] == NULL) {
-	break;
+		if (sphere[i][0] == NULL) {
+			break;
+		}
+		i++;
 	}
-	i++;
-	}
-	
+
 	if (fscanf(nff, "%g %g %g %g", &sphere[i][0], &sphere[i][1], &sphere[i][2], &sphere[i][3]) != 0) {
 		printf("SPHERE %d: %g %g %g %g\n", i, sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
 	}
 
-/*
+	/*
 	if (fscanf(nff, "%g %g %g %g", &sphere[i][0], &sphere[i][1], &sphere[i][2], &sphere[i][3]) != 0) {
 	printf("SPHERE %d: %g %g %g %g\n", i, sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
 	Sphere s;
