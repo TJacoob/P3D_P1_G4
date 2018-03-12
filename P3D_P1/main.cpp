@@ -72,6 +72,18 @@ struct Ray
 	Vec3 origin, direction;
 };
 
+struct Sphere
+{
+	Vec3 center;
+	float radius;
+	Sphere(Vec3 c, float r) : center(c), radius(r) {}
+	Vec3 normalize(Vec3 pi, Vec3 center, float radius) {
+		return (pi - center) / radius;
+	}
+};
+
+
+
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
 //Color rayTracing(Ray ray, int depth, float RefrIndex)
@@ -248,7 +260,7 @@ void renderScene()
 			//ray = calculate PrimaryRay(x, y);
 			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
 
-			Color pointColor = rayTracing(1,1.0);
+			Color pointColor = rayTracing(1, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
@@ -256,7 +268,7 @@ void renderScene()
 			colors[index_col++] = pointColor.rgba[1];
 			colors[index_col++] = pointColor.rgba[2];
 
-			printf("point %d %d", x, y);
+			//printf("point %d %d", x, y);
 
 			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
 				drawPoints();
@@ -264,7 +276,7 @@ void renderScene()
 				index_col = 0;
 			}
 		}
-		printf("line %d", y);
+		//printf("line %d", y);
 		if (draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
 			drawPoints();
 			index_pos = 0;
@@ -430,15 +442,27 @@ void setSphere() {
 	int i = 0;
 
 	while (i < MAX_SPHERE) {
-		if (sphere[i][0] == NULL && sphere[i][1] == NULL && sphere[i][2] == NULL && sphere[i][3] == NULL) {
-			break;
-		}
-		i++;
+	if (sphere[i][0] == NULL) {
+	break;
 	}
-
+	i++;
+	}
+	
 	if (fscanf(nff, "%g %g %g %g", &sphere[i][0], &sphere[i][1], &sphere[i][2], &sphere[i][3]) != 0) {
 		printf("SPHERE %d: %g %g %g %g\n", i, sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
 	}
+
+/*
+	if (fscanf(nff, "%g %g %g %g", &sphere[i][0], &sphere[i][1], &sphere[i][2], &sphere[i][3]) != 0) {
+	printf("SPHERE %d: %g %g %g %g\n", i, sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
+	Sphere s;
+	s.center[0] = sphere[i][0];
+	s.center[1] = sphere[i][1];
+	s.center[2] = sphere[i][2];
+	s.radius = sphere[i][3];
+	}
+	*/
+
 }
 
 void setPlane() {
@@ -518,8 +542,8 @@ int main(int argc, char* argv[])
 	/*INSERT HERE YOUR CODE FOR PARSING NFF FILES*/
 	//scene = new Scene();
 	//if (!(scene->load_nff("input_file.nff"))) return 0;
-	RES_X = resolution[0];
-	RES_Y = resolution[1];
+	RES_X = 50;
+	RES_Y = 50;
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
