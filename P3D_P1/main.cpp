@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include "camera.h"
+#include "vec3.h"
 //#include "scene.h"
 
 #define CAPTION "ray tracer"
@@ -26,7 +28,6 @@
 #define MAX_DEPTH 6
 #define MAX_LIGHTS 6
 #define MAX_SPHERE 20
-
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -60,9 +61,16 @@ int resolution[2];
 
 char* str;
 
+/* Helper Structures */
 struct Color
 {
 	float rgba[4];
+};
+
+struct Ray
+{
+	vec3 origin;
+	vec3 direction;
 };
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
@@ -70,6 +78,7 @@ struct Color
 //Color rayTracing(Ray ray, int depth, float RefrIndex)
 Color rayTracing(int depth, float RefrIndex)
 {
+	// Calculations will be done here, just a test for now
 	Color c = { 0.1f, 0.1f, 0.1f, 1 };
 	return c;
 }
