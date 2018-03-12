@@ -17,6 +17,10 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 	c->at = at;
 	c->up = up;
 
+	Vec3 temp = eye - at;
+	double df = temp.module();
+	printf("FOIV da camara: %d\n", df);
+
 	//double dist = 				//Field of vision size, norma de vetores
 	//c->h = 
 	//c->w = (ResX/ResY)*c->h

@@ -61,6 +61,8 @@ int resolution[2];
 
 char* str;
 
+Camera globalCam;
+
 /* Helper Structures */
 struct Color
 {
@@ -520,6 +522,12 @@ int main(int argc, char* argv[])
 	//if (!(scene->load_nff("input_file.nff"))) return 0;
 	RES_X = resolution[0];
 	RES_Y = resolution[1];
+
+	// Setup camera
+	Vec3 *eyeVec = new Vec3(f[0], f[1], f[2]);
+	Vec3 *atVec = new Vec3(at[0], at[1], at[2]);
+	Vec3 *upVec = new Vec3(up[0], up[1], up[2]);
+	globalCam = startCam(globalcam, eyeVec, atVec, upVec, fov, near, far, resX, resY);
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
