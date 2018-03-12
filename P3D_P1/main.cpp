@@ -25,6 +25,7 @@
 
 #define MAX_DEPTH 6
 #define MAX_LIGHTS 6
+#define MAX_SPHERE 20
 
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
@@ -53,7 +54,7 @@ int WindowHandle = 0;
 /*NFF FILE*/
 FILE * nff;
 
-float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][3];
+float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
 
 int resolution[2];
 
@@ -361,8 +362,8 @@ void setF() {
 	if (fscanf(nff, "rom %g %g %g", &f[0], &f[1], &f[2]) != 0) {
 		printf("FROM: %g %g %g\n", f[0], f[1], f[2]);
 	}
-	else {
-		printf("not yet\n");
+	else if (fscanf(nff, " %g %g %g %g %g %g %g %g", &fillShade[0], &fillShade[1], &fillShade[2], &fillShade[3], &fillShade[4], &fillShade[5], &fillShade[6], &fillShade[7]) != 0) {
+		printf("FILL SHADE: %g %g %g %g %g %g %g %g\n", fillShade[0], fillShade[1], fillShade[2], fillShade[3], fillShade[4], fillShade[5], fillShade[6], fillShade[7]);
 	}
 }
 
@@ -393,6 +394,42 @@ void setResolution() {
 	}
 }
 
+void setLight() {
+	int i = 0;
+
+	while (i < MAX_LIGHTS) {
+		if (light[i][0] == NULL && light[i][1] == NULL && light[i][2] == NULL && light[i][3] == NULL && light[i][4] == NULL && light[i][5] == NULL) {
+			break;
+		}
+		i++;
+	}
+
+	if (fscanf(nff, "%g %g %g %g %g %g", &light[i][0], &light[i][1], &light[i][2], &light[i][3], &light[i][4], &light[i][5]) != 0) {
+		printf("LIGHT %d: %g %g %g %g %g %g\n", i, light[i][0], light[i][1], light[i][2], light[i][3], light[i][4], light[i][5]);
+	}
+}
+
+void setSphere() {
+	int i = 0;
+
+	while (i < MAX_SPHERE) {
+		if (sphere[i][0] == NULL && sphere[i][1] == NULL && sphere[i][2] == NULL && sphere[i][3] == NULL) {
+			break;
+		}
+		i++;
+	}
+
+	if (fscanf(nff, "%g %g %g %g", &sphere[i][0], &sphere[i][1], &sphere[i][2], &sphere[i][3]) != 0) {
+		printf("SPHERE %d: %g %g %g %g\n", i, sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
+	}
+}
+
+void setPlane() {
+	if (fscanf(nff, "l %g %g %g %g %g %g %g %g %g", &p1[0], &p1[1], &p1[2], &p2[0], &p2[1], &p2[2], &p3[0], &p3[1], &p3[2]) != 0) {
+		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]);
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	char ch;
@@ -410,6 +447,9 @@ int main(int argc, char* argv[])
 		case '\f':
 		case '\r':
 			continue;
+		case '#':
+			break;
+			/*Comment*/
 		case 'b':
 			setBackground();
 			printf("BACKGROUND: %f %f %f\n", background[0], background[1], background[2]);
@@ -440,9 +480,17 @@ int main(int argc, char* argv[])
 			break;
 			/* Resolution Section*/
 		case 'l':
-			//setLight();
+			setLight();
 			break;
 			/* Light Section*/
+		case 'p':
+			setPlane();
+			break;
+			/* Plane Section*/
+		case 's':
+			setSphere();
+			break;
+			/* Sphere Section*/
 		default:
 			break;
 			//exit(1);
