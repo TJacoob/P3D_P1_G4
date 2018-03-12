@@ -60,14 +60,20 @@ int resolution[2];
 
 char* str;
 
-///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
-/*
-Color rayTracing(Ray ray, int depth, float RefrIndex)
+struct Color
 {
+	float rgba[4];
+};
 
-//INSERT HERE YOUR CODE
+///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
+
+//Color rayTracing(Ray ray, int depth, float RefrIndex)
+Color rayTracing(int depth, float RefrIndex)
+{
+	Color c = { 0.1f, 0.1f, 0.1f, 1 };
+	return c;
 }
-*/
+
 /////////////////////////////////////////////////////////////////////// ERRORS
 
 bool isOpenGLError() {
@@ -230,16 +236,19 @@ void renderScene()
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
-
 			//YOUR 2 FUNTIONS:
 			//ray = calculate PrimaryRay(x, y);
-			//color = rayTracing(ray, 1, 1.0);
+			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
+
+			Color pointColor = rayTracing(1,1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
-			colors[index_col++] = (float)background[0];
-			colors[index_col++] = (float)background[1];
-			colors[index_col++] = (float)background[2];
+			colors[index_col++] = pointColor.rgba[0];
+			colors[index_col++] = pointColor.rgba[1];
+			colors[index_col++] = pointColor.rgba[2];
+
+			printf("point %d %d", x, y);
 
 			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
 				drawPoints();
@@ -434,6 +443,7 @@ int main(int argc, char* argv[])
 {
 	char ch;
 
+	//nff = fopen("input_file_test.nff", "r");
 	nff = fopen("input_file.nff", "r");
 	if (nff == NULL) {
 		return 0;
@@ -543,4 +553,3 @@ int main(int argc, char* argv[])
 	exit(EXIT_SUCCESS);
 }
 ///////////////////////////////////////////////////////////////////////
-
