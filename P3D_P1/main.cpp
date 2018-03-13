@@ -57,9 +57,9 @@ int WindowHandle = 0;
 /*NFF FILE*/
 FILE * nff;
 
-float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
+float t, background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
 
-int resolution[2], t;
+int resolution[2];
 
 char* str;
 
@@ -82,6 +82,19 @@ float dot(const Vec3 a, const Vec3 b) {
 	return (a.x*b.x + a.y*b.y + a.z*b.z);
 }
 
+
+struct Plane
+{
+	Vec3 point1, point2, point3;
+	Plane(Vec3 p1, Vec3 p2, Vec3 p3) : point1(p1), point2(p2), point3(p3) {}
+	Vec3 normalize(Vec3 p1, Vec3 p2, Vec3 p3) {
+		//Vec3 vec.crossProduct(p1 - p2, p2 - p1);
+	}
+	bool intersect(Ray ray, float t) const {
+		//Vec3 n =  ;
+	}
+};
+
 struct Sphere
 {
 	Vec3 center;
@@ -91,7 +104,6 @@ struct Sphere
 		return (pi - center) / radius;
 	}
 	bool intersect(Ray ray, float t) const {
-		t = 0;
 		Vec3 o = ray.origin;
 		Vec3 d = ray.direction;
 		Vec3 oc = o - center;
@@ -108,7 +120,7 @@ struct Sphere
 		if (dot(oc, oc) > (radius * radius)) {
 			t = t0;
 		}
-		else if (dot(oc, oc) <= (radius * radius)){
+		else if (dot(oc, oc) <= (radius * radius)) {
 			t = t1;
 		}
 		//t = (t0 < t1) ? t0 : t1;
@@ -136,12 +148,16 @@ Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
 
-//	Vec3 normalizedRay = ray.origin + ray.direction.normalize * depth;
+	//	Vec3 normalizedRay = ray.origin + ray.direction.normalize * depth;
+
+	Plane p(Vec3(p1[0], p1[1], p1[2]), Vec3(p2[0], p2[1], p2[2]), Vec3(p3[0], p3[1], p3[2]));
+
+
 
 	for (int i = 0; i <= num_spheres; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
 		if (!s.intersect(ray, t)) {
-			continue;
+			return { background[0], background[1], background[2], 1 };
 		}
 		else
 		{
@@ -152,11 +168,11 @@ Color rayTracing(Ray ray, int depth, float RefrIndex)
 		}
 	}
 
-	return { background[0], background[1], background[2], 1 };
 	
+
 	// Calculations will be done here, just a test for now
 	//c = { 0.1f, 0.1f, 0.1f, 1 };
-	
+
 }
 
 /////////////////////////////////////////////////////////////////////// ERRORS
