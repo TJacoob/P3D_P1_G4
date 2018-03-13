@@ -4,8 +4,9 @@ struct _Camera {
 	/* Camera definition*/
 	Vec3 eye, at, up;
 	float fovy;
+	float df;
 	//float near, far; //hither and yon planes
-	//int ResX, ResY; 
+	int ResX, ResY; 
 	float w, h;
 	Vec3 xe, ye, ze; //uvn frame
 					 //Vec3 uvn; //Already in xyz mode
@@ -17,19 +18,21 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 	c->eye = eye;
 	c->at = at;
 	c->up = up;
+	c->ResX = ResX;
+	c->ResY = ResY;
 
 	//printf("eye: %f %f %f\n", eye.x, eye.y, eye.z);
 	//printf("at: %f %f %f\n", at.x, at.y, at.z);
 	//printf("ResX: %d ,ResY: %d\n", ResX, ResY);
-	//printf("�ngulo de vis�o: %lf\n", fovy);
+	//printf("Angulo de visao: %lf\n", fovy);
 
 	Vec3 temp = at - eye;
 	//printf("temp: %f %f %f\n", temp.x, temp.y, temp.z);
 	//temp = temp.normalize();    //Deve ser normalizado?? E se sim, � aqui que tem de ser?
-	double df = temp.module();
-	printf("Dist�ncia da camara: %lf\n", df);
-	// Falta dar assign � camera deste valor, se for preciso
-
+	float df = temp.module();
+	c->df = df;
+	printf("Dist�ncia da camara: %f\n", c->df);
+	
 	c->h = (float)2 * df * tan(fovy / 2);
 	printf("Altura: %f\n", c->h);
 
@@ -62,4 +65,6 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 
 	return c;
 };
+
+
 

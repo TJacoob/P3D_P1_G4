@@ -18,7 +18,6 @@
 #include <GL/freeglut.h>
 #include "camera.h"
 #include "vec3.h"
-//#include "scene.h"
 
 #define CAPTION "ray tracer"
 
@@ -76,6 +75,7 @@ struct Ray
 	Ray(Vec3 o, Vec3 d) : origin(o), direction(d) {}
 };
 
+
 float dot(const Vec3 a, const Vec3 b) {
 	return (a.x*b.x + a.y*b.y + a.z*b.z);
 }
@@ -107,8 +107,22 @@ struct Sphere
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
-//Color rayTracing(Ray ray, int depth, float RefrIndex)
-Color rayTracing(Ray ray,int depth, float RefrIndex)
+Ray camGetPrimaryRay(Camera *c, double x, float y)
+{
+	Vec3 tempZ = c->ze * (-c->df);
+
+	float calcY = c->h * ((y/c->ResY) - 0.5);
+	Vec3 tempY = c->ye * calcY;
+
+	float calcX = c->w * ((x / c->ResX) - 0.5);
+	Vec3 tempX = c->xe * calcX;
+
+	Vec3 dir = (tempZ + tempY + tempX).normalize();
+	Ray r = Ray(c->eye, dir);
+	return r;
+}
+
+Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
 	float t = 0;
@@ -293,7 +307,11 @@ void renderScene()
 			//YOUR 2 FUNTIONS:
 			//ray = calculate PrimaryRay(x, y);
 			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
-			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1));
+			//Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1));
+			Ray ray = camGetPrimaryRay(globalCam, x, y);
+			printf("PRIMARY RAYS:\n");
+			printf("ORIGIN: %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
+			printf("DIRECTION: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
 
 			Color pointColor = rayTracing(ray, 1, 1.0);
 
