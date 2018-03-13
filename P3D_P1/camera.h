@@ -26,7 +26,7 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 	Vec3 temp = at - eye;
 	//printf("temp: %f %f %f\n", temp.x, temp.y, temp.z);
 	//temp = temp.normalize();    //Deve ser normalizado?? E se sim, � aqui que tem de ser?
-	float df = temp.module();
+	double df = temp.module();
 	printf("Dist�ncia da camara: %lf\n", df);
 	// Falta dar assign � camera deste valor, se for preciso
 
@@ -44,9 +44,21 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 	c->ze = temp2;
 	printf("ze: %f %f %f\n", c->ze.x, c->ze.y, c->ze.z);
 
-	//double dist = 				//Field of vision size, norma de vetores
-	//c->h = 
-	//c->w = (ResX/ResY)*c->h
+	//printf("up: %f %f %f\n", up.x, up.y, up.z);
+	Vec3 tempX = Vec3(up.x * c->ze.x, up.y * c->ze.y, up.z * c->ze.z);
+	//printf("tempX: %f %f %f\n", tempX.x, tempX.y, tempX.z);
+	float calcX = 1 / (tempX.module());
+	//printf("CalcX: %f\n", calcX);
+	tempX.x = tempX.x * calcX;
+	tempX.y = tempX.y * calcX;
+	tempX.z = tempX.z * calcX;
+	c->xe = tempX;					//Resultado no input_file dá 0 0 1, é bom sinal?
+	printf("xe: %f %f %f\n", c->xe.x, c->xe.y, c->xe.z);
+
+	Vec3 tempY = Vec3(c->ze.x * c->xe.x, c->ze.y * c->xe.y, c->ze.z * c->xe.z);
+	//printf("tempY: %f %f %f\n", tempY.x, tempY.y, tempY.z);
+	c->ye = tempY;
+	printf("ye: %f %f %f\n", c->ye.x, c->ye.y, c->ye.z);
 
 	return c;
 };
