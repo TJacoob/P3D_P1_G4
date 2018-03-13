@@ -117,7 +117,7 @@ Ray camGetPrimaryRay(Camera *c, double x, float y)
 	float calcX = c->w * ((x / c->ResX) - 0.5);
 	Vec3 tempX = c->xe * calcX;
 
-	Vec3 dir = (tempZ + tempY + tempX).normalize();
+	Vec3 dir = (tempZ + tempY + tempX).normalize();	
 	Ray r = Ray(c->eye, dir);
 	return r;
 }
@@ -126,10 +126,11 @@ Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
 	float t = 0;
-	for (int i = 0; sphere[i][0] != NULL && sphere[i][1] != NULL && sphere[i][2] != NULL && sphere[i][3] != NULL; i++) {
+
+	for (int i = 0; sphere[i][0] == NULL; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
 		if (s.intersect(ray, t)) {
-			c = { background[0], background[1], background[2], 1};
+			c = { background[0], background[1], background[2], 1 };
 		}
 		else
 		{
@@ -138,7 +139,7 @@ Color rayTracing(Ray ray, int depth, float RefrIndex)
 		}
 	}
 	// Calculations will be done here, just a test for now
-	c = { 0.1f, 0.1f, 0.1f, 1 };
+	//c = { 0.1f, 0.1f, 0.1f, 1 };
 	return c;
 }
 
@@ -307,8 +308,8 @@ void renderScene()
 			//YOUR 2 FUNTIONS:
 			//ray = calculate PrimaryRay(x, y);
 			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
-			//Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1));
-			Ray ray = camGetPrimaryRay(globalCam, x, y);
+			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1).normalize());
+			//Ray ray = camGetPrimaryRay(globalCam, x, y);
 			printf("PRIMARY RAYS:\n");
 			printf("ORIGIN: %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
 			printf("DIRECTION: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
@@ -636,9 +637,6 @@ int main(int argc, char* argv[])
 
 	colors = (float*)malloc(size_colors);
 	if (colors == NULL) exit(1);
-
-
-
 
 	init(argc, argv);
 	glutMainLoop();
