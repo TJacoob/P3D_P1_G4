@@ -59,7 +59,7 @@ FILE * nff;
 
 float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
 
-int resolution[2];
+int resolution[2], t;
 
 char* str;
 
@@ -91,35 +91,43 @@ struct Sphere
 		return (pi - center) / radius;
 	}
 	bool intersect(Ray ray, float t) const {
+		t = 0;
 		Vec3 o = ray.origin;
 		Vec3 d = ray.direction;
 		Vec3 oc = o - center;
-		float b = 2 * dot(oc, d);
-		float c = dot(oc, oc) - radius * radius;
-		float disc = b * b - 4 * c;
-		if (disc < 1e-4) return false;
-		disc = sqrt(disc);
-		float t0 = -b - disc;
-		float t1 = -b + disc;
-		t = (t0 < t1) ? t0 : t1;
+		float b = dot(oc, d);//certo
+		float c = dot(oc, oc) - (radius * radius);
+		if (c > 0) {
+			if (b < 0) return false;
+		}
+		float r = b * b - c;
+		float raizR = sqrt(r);
+		float t0 = b - raizR;
+		float t1 = b + raizR;
+
+		if (dot(oc, oc) > (radius * radius)) {
+			t = t0;
+		}
+		else if (dot(oc, oc) <= (radius * radius)){
+			t = t1;
+		}
+		//t = (t0 < t1) ? t0 : t1;
 		return true;
 	}
 };
-
-
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
 Ray camGetPrimaryRay(Camera *c, double x, float y)
 {
 	Vec3 tempZ = c->ze * (-c->df);
 
-	float calcY = c->h * ((y/c->ResY) - 0.5);
+	float calcY = c->h * ((y / c->ResY) - 0.5);
 	Vec3 tempY = c->ye * calcY;
 
 	float calcX = c->w * ((x / c->ResX) - 0.5);
 	Vec3 tempX = c->xe * calcX;
 
-	Vec3 dir = (tempZ + tempY + tempX).normalize();	
+	Vec3 dir = (tempZ + tempY + tempX).normalize();
 	Ray r = Ray(c->eye, dir);
 	return r;
 }
@@ -127,27 +135,28 @@ Ray camGetPrimaryRay(Camera *c, double x, float y)
 Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
-	float t = depth;
+
+//	Vec3 normalizedRay = ray.origin + ray.direction.normalize * depth;
 
 	for (int i = 0; i <= num_spheres; i++) {
-
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
-
 		if (!s.intersect(ray, t)) {
-			c = { background[0], background[1], background[2], 1 };
-			printf("\nIN1\n");
+			continue;
 		}
 		else
 		{
-			printf("\n%g %g %g \n", fillShade[1][0], fillShade[1][1], fillShade[1][2]);
 			c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
-			Vec3 pi = ray.origin + ray.direction*t;//não tenho a certeza se isto é o hit point
-			printf("\nIN2\n");
+			Vec3 hitpoint = ray.origin + ray.direction*t;
+			printf("%g %g %g \n", hitpoint.x, hitpoint.y, hitpoint.z);
+			return c;
 		}
 	}
+
+	return { background[0], background[1], background[2], 1 };
+	
 	// Calculations will be done here, just a test for now
 	//c = { 0.1f, 0.1f, 0.1f, 1 };
-	return c;
+	
 }
 
 /////////////////////////////////////////////////////////////////////// ERRORS
@@ -315,7 +324,7 @@ void renderScene()
 			//YOUR 2 FUNTIONS:
 			//ray = calculate PrimaryRay(x, y);
 			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
-			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1));
+			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1).normalize());
 			//Ray ray = camGetPrimaryRay(globalCam, x, y);
 			//printf("PRIMARY RAYS:\n");
 			//printf("ORIGIN: %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
@@ -602,8 +611,11 @@ int main(int argc, char* argv[])
 	/*INSERT HERE YOUR CODE FOR PARSING NFF FILES*/
 	//scene = new Scene();
 	//if (!(scene->load_nff("input_file.nff"))) return 0;
-	RES_X = resolution[0];
-	RES_Y = resolution[1];
+	//RES_X = resolution[0];
+	//RES_Y = resolution[1];
+
+	RES_X = 128;
+	RES_Y = 128;
 
 	// Setup camera
 	Vec3 eyeVec = Vec3(f[0], f[1], f[2]);
