@@ -611,11 +611,9 @@ int main(int argc, char* argv[])
 	/*INSERT HERE YOUR CODE FOR PARSING NFF FILES*/
 	//scene = new Scene();
 	//if (!(scene->load_nff("input_file.nff"))) return 0;
-	//RES_X = resolution[0];
-	//RES_Y = resolution[1];
+	RES_X = resolution[0];
+	RES_Y = resolution[1];
 
-	RES_X = 128;
-	RES_Y = 128;
 
 	// Setup camera
 	Vec3 eyeVec = Vec3(f[0], f[1], f[2]);
