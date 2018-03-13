@@ -44,6 +44,8 @@ GLuint VboId[2];
 GLuint VertexShaderId, FragmentShaderId, ProgramId;
 GLint UniformId;
 
+int num_spheres = 0;
+
 //Scene* scene = NULL;
 int RES_X, RES_Y;
 
@@ -125,17 +127,22 @@ Ray camGetPrimaryRay(Camera *c, double x, float y)
 Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
-	float t = 0;
+	float t = depth;
 
-	for (int i = 0; sphere[i][0] == NULL; i++) {
+	for (int i = 0; i <= num_spheres; i++) {
+
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
-		if (s.intersect(ray, t)) {
+
+		if (!s.intersect(ray, t)) {
 			c = { background[0], background[1], background[2], 1 };
+			printf("\nIN1\n");
 		}
 		else
 		{
+			printf("\n%g %g %g \n", fillShade[1][0], fillShade[1][1], fillShade[1][2]);
 			c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
 			Vec3 pi = ray.origin + ray.direction*t;//não tenho a certeza se isto é o hit point
+			printf("\nIN2\n");
 		}
 	}
 	// Calculations will be done here, just a test for now
@@ -308,11 +315,11 @@ void renderScene()
 			//YOUR 2 FUNTIONS:
 			//ray = calculate PrimaryRay(x, y);
 			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
-			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1).normalize());
+			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1));
 			//Ray ray = camGetPrimaryRay(globalCam, x, y);
-			printf("PRIMARY RAYS:\n");
-			printf("ORIGIN: %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
-			printf("DIRECTION: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
+			//printf("PRIMARY RAYS:\n");
+			//printf("ORIGIN: %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
+			//printf("DIRECTION: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
 
 			Color pointColor = rayTracing(ray, 1, 1.0);
 
@@ -504,17 +511,16 @@ void setLight() {
 }
 
 void setSphere() {
-	int i = 0;
 
-	while (i < MAX_SPHERE) {
-		if (sphere[i][0] == NULL && sphere[i][1] == NULL && sphere[i][2] == NULL && sphere[i][3] == NULL) {
+	while (num_spheres < MAX_SPHERE) {
+		if (sphere[num_spheres][0] == NULL && sphere[num_spheres][1] == NULL && sphere[num_spheres][2] == NULL && sphere[num_spheres][3] == NULL) {
 			break;
 		}
-		i++;
+		num_spheres++;
 	}
 
-	if (fscanf(nff, "%g %g %g %g", &sphere[i][0], &sphere[i][1], &sphere[i][2], &sphere[i][3]) != 0) {
-		printf("SPHERE %d: %g %g %g %g\n", i, sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
+	if (fscanf(nff, "%g %g %g %g", &sphere[num_spheres][0], &sphere[num_spheres][1], &sphere[num_spheres][2], &sphere[num_spheres][3]) != 0) {
+		printf("SPHERE %d: %g %g %g %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3]);
 	}
 
 }
