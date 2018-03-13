@@ -28,6 +28,7 @@
 #define MAX_DEPTH 6
 #define MAX_LIGHTS 6
 #define MAX_SPHERE 20
+#define MAX_OBJECTS 6
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -55,7 +56,7 @@ int WindowHandle = 0;
 /*NFF FILE*/
 FILE * nff;
 
-float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
+float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
 
 int resolution[2];
 
@@ -72,7 +73,12 @@ struct Color
 struct Ray
 {
 	Vec3 origin, direction;
+	Ray(Vec3 o, Vec3 d) : origin(o), direction(d) {}
 };
+
+float dot(const Vec3 a, const Vec3 b) {
+	return (a.x*b.x + a.y*b.y + a.z*b.z);
+}
 
 struct Sphere
 {
@@ -98,17 +104,27 @@ struct Sphere
 	}
 };
 
-float dot(const Vec3 a, const Vec3 b) {
-	return (a.x*b.x + a.y*b.y + a.z*b.z);
-}
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
 //Color rayTracing(Ray ray, int depth, float RefrIndex)
-Color rayTracing(int depth, float RefrIndex)
+Color rayTracing(Ray ray,int depth, float RefrIndex)
 {
+	Color c;
+	float t = 0;
+	for (int i = 0; sphere[i][0] != NULL && sphere[i][1] != NULL && sphere[i][2] != NULL && sphere[i][3] != NULL; i++) {
+		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
+		if (s.intersect(ray, t)) {
+			c = { background[0], background[1], background[2], 1};
+		}
+		else
+		{
+			c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
+			Vec3 pi = ray.origin + ray.direction*t;//não tenho a certeza se isto é o hit point
+		}
+	}
 	// Calculations will be done here, just a test for now
-	Color c = { 0.1f, 0.1f, 0.1f, 1 };
+	c = { 0.1f, 0.1f, 0.1f, 1 };
 	return c;
 }
 
@@ -277,8 +293,9 @@ void renderScene()
 			//YOUR 2 FUNTIONS:
 			//ray = calculate PrimaryRay(x, y);
 			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
+			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1));
 
-			Color pointColor = rayTracing(1, 1.0);
+			Color pointColor = rayTracing(ray, 1, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
@@ -409,8 +426,19 @@ void setF() {
 	if (fscanf(nff, "rom %g %g %g", &f[0], &f[1], &f[2]) != 0) {
 		printf("FROM: %g %g %g\n", f[0], f[1], f[2]);
 	}
-	else if (fscanf(nff, " %g %g %g %g %g %g %g %g", &fillShade[0], &fillShade[1], &fillShade[2], &fillShade[3], &fillShade[4], &fillShade[5], &fillShade[6], &fillShade[7]) != 0) {
-		printf("FILL SHADE: %g %g %g %g %g %g %g %g\n", fillShade[0], fillShade[1], fillShade[2], fillShade[3], fillShade[4], fillShade[5], fillShade[6], fillShade[7]);
+	else {
+		int i = 0;
+
+		while (i < MAX_OBJECTS) {
+			if (fillShade[i][0] == NULL && fillShade[i][1] == NULL && fillShade[i][2] == NULL && fillShade[i][3] == NULL && fillShade[i][4] == NULL && fillShade[i][5] == NULL && fillShade[i][6] == NULL && fillShade[i][7] == NULL) {
+				break;
+			}
+			i++;
+		}
+
+		if (fscanf(nff, " %g %g %g %g %g %g %g %g", &fillShade[i][0], &fillShade[i][1], &fillShade[i][2], &fillShade[i][3], &fillShade[i][4], &fillShade[i][5], &fillShade[i][6], &fillShade[i][7]) != 0) {
+			printf("FILL SHADE %d: %g %g %g %g %g %g %g %g\n", i, fillShade[i][0], fillShade[i][1], fillShade[i][2], fillShade[i][3], fillShade[i][4], fillShade[i][5], fillShade[i][6], fillShade[i][7]);
+		}
 	}
 }
 
@@ -460,7 +488,7 @@ void setSphere() {
 	int i = 0;
 
 	while (i < MAX_SPHERE) {
-		if (sphere[i][0] == NULL) {
+		if (sphere[i][0] == NULL && sphere[i][1] == NULL && sphere[i][2] == NULL && sphere[i][3] == NULL) {
 			break;
 		}
 		i++;
@@ -469,17 +497,6 @@ void setSphere() {
 	if (fscanf(nff, "%g %g %g %g", &sphere[i][0], &sphere[i][1], &sphere[i][2], &sphere[i][3]) != 0) {
 		printf("SPHERE %d: %g %g %g %g\n", i, sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
 	}
-
-	/*
-	if (fscanf(nff, "%g %g %g %g", &sphere[i][0], &sphere[i][1], &sphere[i][2], &sphere[i][3]) != 0) {
-	printf("SPHERE %d: %g %g %g %g\n", i, sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
-	Sphere s;
-	s.center[0] = sphere[i][0];
-	s.center[1] = sphere[i][1];
-	s.center[2] = sphere[i][2];
-	s.radius = sphere[i][3];
-	}
-	*/
 
 }
 

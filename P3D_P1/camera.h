@@ -8,7 +8,7 @@ struct _Camera {
 	//int ResX, ResY; 
 	float w, h;
 	Vec3 xe, ye, ze; //uvn frame
-	//Vec3 uvn; //Already in xyz mode
+					 //Vec3 uvn; //Already in xyz mode
 };
 typedef struct _Camera Camera;
 
@@ -23,19 +23,19 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 	//printf("ResX: %d ,ResY: %d\n", ResX, ResY);
 	//printf("�ngulo de vis�o: %lf\n", fovy);
 
-	Vec3 temp = at-eye;
+	Vec3 temp = at - eye;
 	//printf("temp: %f %f %f\n", temp.x, temp.y, temp.z);
 	//temp = temp.normalize();    //Deve ser normalizado?? E se sim, � aqui que tem de ser?
-	double df = temp.module();
+	float df = temp.module();
 	printf("Dist�ncia da camara: %lf\n", df);
 	// Falta dar assign � camera deste valor, se for preciso
 
-	c->h = (float) 2 * df * tan(fovy / 2);
+	c->h = (float)2 * df * tan(fovy / 2);
 	printf("Altura: %f\n", c->h);
 
-	c->w = (float) (ResX/ResY) * (c->h) ;
+	c->w = (float)(ResX / ResY) * (c->h);
 	printf("Largura: %f\n", c->w);
-	
+
 	float calc = (1 / df);
 	Vec3 temp2 = (eye - at);
 	temp2.x = temp2.x*calc;
@@ -47,7 +47,7 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 	//double dist = 				//Field of vision size, norma de vetores
 	//c->h = 
 	//c->w = (ResX/ResY)*c->h
-	
+
 	return c;
 };
 
