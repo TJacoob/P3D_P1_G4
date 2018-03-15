@@ -14,10 +14,12 @@
 #include <sstream>
 #include <string>
 #include <stdio.h>
+
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include "camera.h"
-#include "vec3.h"
+
+#include "Vec3.h"
+#include "Ray.h"
 
 #define CAPTION "ray tracer"
 
@@ -25,9 +27,6 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 6
-#define MAX_LIGHTS 6
-#define MAX_SPHERE 20
-#define MAX_OBJECTS 6
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -44,9 +43,6 @@ GLuint VboId[2];
 GLuint VertexShaderId, FragmentShaderId, ProgramId;
 GLint UniformId;
 
-int num_spheres = 0;
-
-//Scene* scene = NULL;
 int RES_X, RES_Y;
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
@@ -54,127 +50,13 @@ int draw_mode = 0;
 
 int WindowHandle = 0;
 
-/*NFF FILE*/
-FILE * nff;
-
-float t, background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
-
-int resolution[2];
-
-char* str;
-
-Camera * globalCam;
-
-/* Helper Structures */
-struct Color
-{
-	float rgba[4];
-};
-
-struct Ray
-{
-	Vec3 origin, direction;
-	Ray(Vec3 o, Vec3 d) : origin(o), direction(d) {}
-};
-
-
-float dot(const Vec3 a, const Vec3 b) {
-	return (a.x*b.x + a.y*b.y + a.z*b.z);
-}
-
-
-struct Plane
-{
-	Vec3 point1, point2, point3;
-	Plane(Vec3 p1, Vec3 p2, Vec3 p3) : point1(p1), point2(p2), point3(p3) {}
-	Vec3 normalize(Vec3 p1, Vec3 p2, Vec3 p3) {
-		//Vec3 vec.crossProduct(p1 - p2, p2 - p1);
-	}
-	bool intersect(Ray ray, float t) const {
-		//Vec3 n =  ;
-	}
-};
-
-struct Sphere
-{
-	Vec3 center;
-	float radius;
-	Sphere(Vec3 c, float r) : center(c), radius(r) {}
-	Vec3 normalize(Vec3 pi, Vec3 center, float radius) {
-		return (pi - center) / radius;
-	}
-	bool intersect(Ray ray, float t) const {
-		Vec3 o = ray.origin;
-		Vec3 d = ray.direction;
-		Vec3 oc = o - center;
-		float b = dot(oc, d);//certo
-		float c = dot(oc, oc) - (radius * radius);
-		if (c > 0) {
-			if (b < 0) return false;
-		}
-		float r = b * b - c;
-		float raizR = sqrt(r);
-		float t0 = b - raizR;
-		float t1 = b + raizR;
-
-		if (dot(oc, oc) > (radius * radius)) {
-			t = t0;
-		}
-		else if (dot(oc, oc) <= (radius * radius)) {
-			t = t1;
-		}
-		//t = (t0 < t1) ? t0 : t1;
-		return true;
-	}
-};
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
-
-Ray camGetPrimaryRay(Camera *c, double x, float y)
-{
-	Vec3 tempZ = c->ze * (-c->df);
-
-	float calcY = c->h * ((y / c->ResY) - 0.5);
-	Vec3 tempY = c->ye * calcY;
-
-	float calcX = c->w * ((x / c->ResX) - 0.5);
-	Vec3 tempX = c->xe * calcX;
-
-	Vec3 dir = (tempZ + tempY + tempX).normalize();
-	Ray r = Ray(c->eye, dir);
-	return r;
-}
-
+/*
 Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
-	Color c;
-
-	//	Vec3 normalizedRay = ray.origin + ray.direction.normalize * depth;
-
-	Plane p(Vec3(p1[0], p1[1], p1[2]), Vec3(p2[0], p2[1], p2[2]), Vec3(p3[0], p3[1], p3[2]));
-
-
-
-	for (int i = 0; i <= num_spheres; i++) {
-		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
-		if (!s.intersect(ray, t)) {
-			return { background[0], background[1], background[2], 1 };
-		}
-		else
-		{
-			c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
-			Vec3 hitpoint = ray.origin + ray.direction*t;
-			printf("%g %g %g \n", hitpoint.x, hitpoint.y, hitpoint.z);
-			return c;
-		}
-	}
-
-	
-
-	// Calculations will be done here, just a test for now
-	//c = { 0.1f, 0.1f, 0.1f, 1 };
-
+	INSERT HERE YOUR CODE
 }
-
+*/
 /////////////////////////////////////////////////////////////////////// ERRORS
 
 bool isOpenGLError() {
@@ -193,7 +75,7 @@ void checkOpenGLError(std::string error)
 {
 	if (isOpenGLError()) {
 		std::cerr << error << std::endl;
-		//exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 }
 /////////////////////////////////////////////////////////////////////// SHADERs
@@ -287,7 +169,6 @@ void createBufferObjects()
 	glDisableVertexAttribArray(VERTEX_COORD_ATTRIB);
 	glDisableVertexAttribArray(COLOR_ATTRIB);
 	checkOpenGLError("ERROR: Could not create VAOs and VBOs.");
-
 }
 
 void destroyBufferObjects()
@@ -337,24 +218,16 @@ void renderScene()
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
+
 			//YOUR 2 FUNTIONS:
 			//ray = calculate PrimaryRay(x, y);
-			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
-			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1).normalize());
-			//Ray ray = camGetPrimaryRay(globalCam, x, y);
-			//printf("PRIMARY RAYS:\n");
-			//printf("ORIGIN: %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
-			//printf("DIRECTION: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
-
-			Color pointColor = rayTracing(ray, 1, 1.0);
+			//color = rayTracing(ray, 1, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
-			colors[index_col++] = pointColor.rgba[0];
-			colors[index_col++] = pointColor.rgba[1];
-			colors[index_col++] = pointColor.rgba[2];
-
-			//printf("point %d %d", x, y);
+			//colors[index_col++] = (float)color.r;
+			//colors[index_col++] = (float)color.g;
+			//colors[index_col++] = (float)color.b;
 
 			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
 				drawPoints();
@@ -362,7 +235,7 @@ void renderScene()
 				index_col = 0;
 			}
 		}
-		//printf("line %d", y);
+		printf("line %d", y);
 		if (draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
 			drawPoints();
 			index_pos = 0;
@@ -458,188 +331,19 @@ void init(int argc, char* argv[])
 	setupGLUT(argc, argv);
 	setupGLEW();
 	std::cerr << "CONTEXT: OpenGL v" << glGetString(GL_VERSION) << std::endl;
-	glClearColor(background[0], background[1], background[2], 1.0f);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	createShaderProgram();
 	createBufferObjects();
 	setupCallbacks();
-
-}
-
-void setBackground() {
-	if (fscanf(nff, " %g %g %g", &background[0], &background[1], &background[2]) == 0) {
-		background[0] = 0;
-		background[1] = 0;
-		background[2] = 0;
-	}
-}
-
-void setF() {
-	if (fscanf(nff, "rom %g %g %g", &f[0], &f[1], &f[2]) != 0) {
-		printf("FROM: %g %g %g\n", f[0], f[1], f[2]);
-	}
-	else {
-		int i = 0;
-
-		while (i < MAX_OBJECTS) {
-			if (fillShade[i][0] == NULL && fillShade[i][1] == NULL && fillShade[i][2] == NULL && fillShade[i][3] == NULL && fillShade[i][4] == NULL && fillShade[i][5] == NULL && fillShade[i][6] == NULL && fillShade[i][7] == NULL) {
-				break;
-			}
-			i++;
-		}
-
-		if (fscanf(nff, " %g %g %g %g %g %g %g %g", &fillShade[i][0], &fillShade[i][1], &fillShade[i][2], &fillShade[i][3], &fillShade[i][4], &fillShade[i][5], &fillShade[i][6], &fillShade[i][7]) != 0) {
-			printf("FILL SHADE %d: %g %g %g %g %g %g %g %g\n", i, fillShade[i][0], fillShade[i][1], fillShade[i][2], fillShade[i][3], fillShade[i][4], fillShade[i][5], fillShade[i][6], fillShade[i][7]);
-		}
-	}
-}
-
-void setA() {
-	if (fscanf(nff, "t %g %g %g", &at[0], &at[1], &at[2]) != 0) {
-		printf("AT: %g %g %g\n", at[0], at[1], at[2]);
-	}
-	else if (fscanf(nff, "ngle %g", &angle) != 0) {
-		printf("ANGLE: %g\n", angle);
-	}
-}
-
-void setUp() {
-	if (fscanf(nff, "p %g %g %g", &up[0], &up[1], &up[2]) != 0) {
-		printf("UP: %g %g %g\n", up[0], up[1], up[2]);
-	}
-}
-
-void setHither() {
-	if (fscanf(nff, "ither %g", &hither) != 0) {
-		printf("HITHER: %g \n", hither);
-	}
-}
-
-void setResolution() {
-	if (fscanf(nff, "esolution %d %d", &resolution[0], &resolution[1]) != 0) {
-		printf("RESOLUTION: %d %d\n", resolution[0], resolution[1]);
-	}
-}
-
-void setLight() {
-	int i = 0;
-
-	while (i < MAX_LIGHTS) {
-		if (light[i][0] == NULL && light[i][1] == NULL && light[i][2] == NULL && light[i][3] == NULL && light[i][4] == NULL && light[i][5] == NULL) {
-			break;
-		}
-		i++;
-	}
-
-	if (fscanf(nff, "%g %g %g %g %g %g", &light[i][0], &light[i][1], &light[i][2], &light[i][3], &light[i][4], &light[i][5]) != 0) {
-		printf("LIGHT %d: %g %g %g %g %g %g\n", i, light[i][0], light[i][1], light[i][2], light[i][3], light[i][4], light[i][5]);
-	}
-}
-
-void setSphere() {
-
-	while (num_spheres < MAX_SPHERE) {
-		if (sphere[num_spheres][0] == NULL && sphere[num_spheres][1] == NULL && sphere[num_spheres][2] == NULL && sphere[num_spheres][3] == NULL) {
-			break;
-		}
-		num_spheres++;
-	}
-
-	if (fscanf(nff, "%g %g %g %g", &sphere[num_spheres][0], &sphere[num_spheres][1], &sphere[num_spheres][2], &sphere[num_spheres][3]) != 0) {
-		printf("SPHERE %d: %g %g %g %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3]);
-	}
-
-}
-
-void setPlane() {
-	if (fscanf(nff, "l %g %g %g %g %g %g %g %g %g", &p1[0], &p1[1], &p1[2], &p2[0], &p2[1], &p2[2], &p3[0], &p3[1], &p3[2]) != 0) {
-		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]);
-	}
 }
 
 int main(int argc, char* argv[])
 {
-	char ch;
-
-	nff = fopen("input_file_test.nff", "r");
-	//nff = fopen("input_file.nff", "r");
-	if (nff == NULL) {
-		return 0;
-	}
-
-	while ((ch = getc(nff)) != EOF) {
-		switch (ch) {
-		case ' ':
-		case '\t':
-		case '\n':
-		case '\f':
-		case '\r':
-			continue;
-		case '#':
-			break;
-			/*Comment*/
-		case 'b':
-			setBackground();
-			printf("BACKGROUND: %f %f %f\n", background[0], background[1], background[2]);
-			break;
-			/* Background color. */
-		case 'v':
-			printf("VIEWPOINT SECTION\n");
-			break;
-			/* Viewpoint Section */
-		case 'f':
-			setF();
-			break;
-			/* From and F Section*/
-		case 'a':
-			setA();
-			break;
-			/* Angle and at Section*/
-		case 'u':
-			setUp();
-			break;
-			/* Up Vector Section*/
-		case 'h':
-			setHither();
-			break;
-			/* Hither Section*/
-		case 'r':
-			setResolution();
-			break;
-			/* Resolution Section*/
-		case 'l':
-			setLight();
-			break;
-			/* Light Section*/
-		case 'p':
-			setPlane();
-			break;
-			/* Plane Section*/
-		case 's':
-			setSphere();
-			break;
-			/* Sphere Section*/
-		default:
-			break;
-			//exit(1);
-		}
-	}
-	printf("\n\n");
-	/*INSERT HERE YOUR CODE FOR PARSING NFF FILES*/
-	//scene = new Scene();
-	//if (!(scene->load_nff("input_file.nff"))) return 0;
-	RES_X = resolution[0];
-	RES_Y = resolution[1];
-
-
-	// Setup camera
-	Vec3 eyeVec = Vec3(f[0], f[1], f[2]);
-	Vec3 atVec = Vec3(at[0], at[1], at[2]);
-	Vec3 upVec = Vec3(up[0], up[1], up[2]);
-
-	globalCam = (Camera*)malloc(sizeof(Camera));
-	if (globalCam == NULL) exit(1);
-
-	globalCam = startCam(globalCam, eyeVec, atVec, upVec, angle, 1, 1, RES_X, RES_Y);
+	//INSERT HERE YOUR CODE FOR PARSING NFF FILES
+		//scene = new Scene();
+	//if (!(scene->load_nff("jap.nff"))) return 0;
+	//RES_X = scene->GetCamera()->GetResX();
+	//RES_Y = scene->GetCamera()->GetResY();
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
@@ -662,8 +366,6 @@ int main(int argc, char* argv[])
 	}
 	printf("resx = %d  resy= %d.\n", RES_X, RES_Y);
 
-	/* STOP PROGRAM TO TEST*/
-
 	vertices = (float*)malloc(size_vertices);
 	if (vertices == NULL) exit(1);
 
@@ -672,7 +374,6 @@ int main(int argc, char* argv[])
 
 	init(argc, argv);
 	glutMainLoop();
-
 	exit(EXIT_SUCCESS);
 }
 ///////////////////////////////////////////////////////////////////////
