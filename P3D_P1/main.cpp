@@ -57,7 +57,9 @@ int WindowHandle = 0;
 /*NFF FILE*/
 FILE * nff;
 
-float t, background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
+float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
+
+float t = 99999;
 
 int resolution[2];
 
@@ -103,19 +105,28 @@ struct Sphere
 	Vec3 normalize(Vec3 pi, Vec3 center, float radius) {
 		return (pi - center) / radius;
 	}
-	bool intersect(Ray ray, float t) const {
+	bool intersect(Ray ray) const {
 		Vec3 o = ray.origin;
 		Vec3 d = ray.direction;
-		Vec3 oc = o - center;
+		Vec3 oc = center - o;
 		float b = dot(oc, d);//certo
 		float c = dot(oc, oc) - (radius * radius);
 		if (c > 0) {
 			if (b < 0) return false;
 		}
-		float r = b * b - c;
+
+		//printf("b %g c %g \n", b*b, c);
+
+		float r = b*b - dot(oc, oc) + (radius * radius);
+
+		if (r < 0) return false;
+
+		printf("r %g \n", r);
 		float raizR = sqrt(r);
 		float t0 = b - raizR;
 		float t1 = b + raizR;
+
+		//printf("t0 %g t1 %g \n", t0, t1);
 
 		if (dot(oc, oc) > (radius * radius)) {
 			t = t0;
@@ -123,6 +134,8 @@ struct Sphere
 		else if (dot(oc, oc) <= (radius * radius)) {
 			t = t1;
 		}
+
+		
 		//t = (t0 < t1) ? t0 : t1;
 		return true;
 	}
@@ -147,29 +160,31 @@ Ray camGetPrimaryRay(Camera *c, double x, float y)
 Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
+	float tempT;
+
 
 	//	Vec3 normalizedRay = ray.origin + ray.direction.normalize * depth;
 
 	Plane p(Vec3(p1[0], p1[1], p1[2]), Vec3(p2[0], p2[1], p2[2]), Vec3(p3[0], p3[1], p3[2]));
 
 
-
 	for (int i = 0; i <= num_spheres; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
-		if (!s.intersect(ray, t)) {
-			return { background[0], background[1], background[2], 1 };
+		if (!s.intersect(ray)) {
+			c = { background[0], background[1], background[2], 1 };
+			
 		}
 		else
 		{
+			tempT = t;
 			c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
-			Vec3 hitpoint = ray.origin + ray.direction*t;
-			printf("%g %g %g \n", hitpoint.x, hitpoint.y, hitpoint.z);
 			return c;
+			//Vec3 hitpoint = ray.origin + ray.direction*t;
 		}
 	}
-
+	return c;
 	
-
+	
 	// Calculations will be done here, just a test for now
 	//c = { 0.1f, 0.1f, 0.1f, 1 };
 
@@ -340,8 +355,8 @@ void renderScene()
 			//YOUR 2 FUNTIONS:
 			//ray = calculate PrimaryRay(x, y);
 			//color = rayTracing(ray, 1, 1.0);  returns vec4 array named color with {R,G,B,A}; ex: vec4 color = { 0.745f, 0.015f, 0.015f, 1.0 };
-			Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1).normalize());
-			//Ray ray = camGetPrimaryRay(globalCam, x, y);
+			//Ray ray(Vec3(x, y, 0), Vec3(0, 0, 1).normalize());
+			Ray ray = camGetPrimaryRay(globalCam, x, y);
 			//printf("PRIMARY RAYS:\n");
 			//printf("ORIGIN: %f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
 			//printf("DIRECTION: %f %f %f\n", ray.direction.x, ray.direction.y, ray.direction.z);
@@ -665,7 +680,7 @@ int main(int argc, char* argv[])
 	/* STOP PROGRAM TO TEST*/
 
 	vertices = (float*)malloc(size_vertices);
-	if (vertices == NULL) exit(1);
+	if (vertices == NULL) exit(1); 
 
 	colors = (float*)malloc(size_colors);
 	if (colors == NULL) exit(1);
