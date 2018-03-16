@@ -59,7 +59,7 @@ FILE * nff;
 
 float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
 
-float t = 99999;
+float tempT, prevT, lowestT;
 
 int resolution[2];
 
@@ -105,28 +105,24 @@ struct Sphere
 	Vec3 normalize(Vec3 pi, Vec3 center, float radius) {
 		return (pi - center) / radius;
 	}
-	bool intersect(Ray ray) const {
+	float intersect(Ray ray) const {
 		Vec3 o = ray.origin;
 		Vec3 d = ray.direction;
 		Vec3 oc = center - o;
-		float b = dot(oc, d);//certo
+		float b = dot(oc, d);
 		float c = dot(oc, oc) - (radius * radius);
 		if (c > 0) {
 			if (b < 0) return false;
 		}
 
-		//printf("b %g c %g \n", b*b, c);
-
 		float r = b*b - dot(oc, oc) + (radius * radius);
 
 		if (r < 0) return false;
 
-		printf("r %g \n", r);
 		float raizR = sqrt(r);
 		float t0 = b - raizR;
 		float t1 = b + raizR;
-
-		//printf("t0 %g t1 %g \n", t0, t1);
+		float t;
 
 		if (dot(oc, oc) > (radius * radius)) {
 			t = t0;
@@ -134,59 +130,64 @@ struct Sphere
 		else if (dot(oc, oc) <= (radius * radius)) {
 			t = t1;
 		}
-
-		
-		//t = (t0 < t1) ? t0 : t1;
-		return true;
+		else {
+			t = 0;
+		}
+		return t;
 	}
 };
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
 Ray camGetPrimaryRay(Camera *c, double x, float y)
 {
-	Vec3 tempZ = c->ze * (-c->df);
+	Vec3 tempZ = c->ze*(-c->df);
 
-	float calcY = c->h * ((y / c->ResY) - 0.5);
-	Vec3 tempY = c->ye * calcY;
+	float calcY = c->h*((y / c->ResY) - 0.5);
+	Vec3 tempY = c->ye*calcY;
 
-	float calcX = c->w * ((x / c->ResX) - 0.5);
-	Vec3 tempX = c->xe * calcX;
+	float calcX = c->w*((x / c->ResX) - 0.5);
+	Vec3 tempX = c->xe*calcX;
 
 	Vec3 dir = (tempZ + tempY + tempX).normalize();
 	Ray r = Ray(c->eye, dir);
+	printf("RAIO LANCADO %g %g %g %g %g %g \n", c->eye.x, c->eye.y, c->eye.z, dir.x, dir.y, dir.z);
 	return r;
 }
 
 Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
-	float tempT;
+	float tempT= 10000, prevT, lowestT;
 
-
-	//	Vec3 normalizedRay = ray.origin + ray.direction.normalize * depth;
+	bool intersect = false;
 
 	Plane p(Vec3(p1[0], p1[1], p1[2]), Vec3(p2[0], p2[1], p2[2]), Vec3(p3[0], p3[1], p3[2]));
 
-
 	for (int i = 0; i <= num_spheres; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
-		if (!s.intersect(ray)) {
-			c = { background[0], background[1], background[2], 1 };
-			
+
+		prevT = tempT;
+		tempT = s.intersect(ray);
+
+		if (tempT == 0) {
+
 		}
-		else
-		{
-			tempT = t;
-			c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
-			return c;
+		else {
+			intersect = true;
+			if (tempT < prevT) {
+				lowestT = tempT;
+			}
 			//Vec3 hitpoint = ray.origin + ray.direction*t;
 		}
 	}
+
+	if (intersect){
+		c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
+	}
+	else{
+		c = { background[0], background[1], background[2], 1 };
+	}
 	return c;
-	
-	
-	// Calculations will be done here, just a test for now
-	//c = { 0.1f, 0.1f, 0.1f, 1 };
 
 }
 
