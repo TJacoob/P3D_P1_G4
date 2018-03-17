@@ -20,6 +20,7 @@
 
 #include "Vec3.h"
 #include "Ray.h"
+#include "Camera.h"
 
 #define CAPTION "ray tracer"
 
@@ -44,6 +45,8 @@ GLuint VertexShaderId, FragmentShaderId, ProgramId;
 GLint UniformId;
 
 int RES_X, RES_Y;
+
+Camera c;
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
 int draw_mode = 0;
@@ -220,7 +223,9 @@ void renderScene()
 		{
 
 			//YOUR 2 FUNTIONS:
-			//ray = calculate PrimaryRay(x, y);
+			Ray r = c.getPrimaryRay(x, y);
+			//r.print();
+			printf("RAY SHOOTING AT %f %f %f\n",r.getPoint(c.view).x, r.getPoint(c.view).y, r.getPoint(c.view).z);
 			//color = rayTracing(ray, 1, 1.0);
 
 			vertices[index_pos++] = (float)x;
@@ -235,7 +240,7 @@ void renderScene()
 				index_col = 0;
 			}
 		}
-		printf("line %d", y);
+		printf("line %d\n", y);
 		if (draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
 			drawPoints();
 			index_pos = 0;
@@ -342,8 +347,11 @@ int main(int argc, char* argv[])
 	//INSERT HERE YOUR CODE FOR PARSING NFF FILES
 		//scene = new Scene();
 	//if (!(scene->load_nff("jap.nff"))) return 0;
-	//RES_X = scene->GetCamera()->GetResX();
-	//RES_Y = scene->GetCamera()->GetResY();
+	RES_X = 32;
+	RES_Y = 32;
+
+	c = Camera(Vec3(2.1, 1.3, 1.7),Vec3(0,0,0),Vec3(0,0,1), (double)45, RES_X, RES_Y);
+	c.print();
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
