@@ -21,6 +21,7 @@
 #include "Vec3.h"
 #include "Ray.h"
 #include "Camera.h"
+#include "Sphere.h"
 
 #define CAPTION "ray tracer"
 
@@ -28,6 +29,7 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 6
+#define MAX_SPHERES 10
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -48,18 +50,33 @@ int RES_X, RES_Y;
 
 Camera c;
 
+// Spheres Array
+Sphere s;
+
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
 int draw_mode = 0;
 
 int WindowHandle = 0;
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
-/*
-Color rayTracing(Ray ray, int depth, float RefrIndex)
+
+Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 {
-	INSERT HERE YOUR CODE
+	//float t0 = 100000, t1 = 100000;
+	for (int i = 0; i < depth; i++)
+	{
+		// printf("RAY SHOOTING AT %f %f %f\n",r.getPoint(c.view).x, r.getPoint(c.view).y, r.getPoint(c.view).z);
+		if (s.intersect(ray))
+		{
+			printf("HOUVE UMA INTERESEÇÃO !!!!!!!!!!!!!!!!!!!!!!\n");
+			return Vec3(0.239, 0.360, 1);
+		}
+	};
+
+	//printf("nope\n");
+	return Vec3(1, 0.078, 0.078);		
 }
-*/
+
 /////////////////////////////////////////////////////////////////////// ERRORS
 
 bool isOpenGLError() {
@@ -225,14 +242,15 @@ void renderScene()
 			//YOUR 2 FUNTIONS:
 			Ray r = c.getPrimaryRay(x, y);
 			//r.print();
-			printf("RAY SHOOTING AT %f %f %f\n",r.getPoint(c.view).x, r.getPoint(c.view).y, r.getPoint(c.view).z);
-			//color = rayTracing(ray, 1, 1.0);
+			// printf("RAY SHOOTING AT %f %f %f\n",r.getPoint(c.view).x, r.getPoint(c.view).y, r.getPoint(c.view).z);
+			// RayTracing vai chamar r.getPoint(t) em que t é a profundidade, e vamos iterar o getPoint até encontrar alguma coisa, ou atingir o nosso limite, se chegar ao limite é pq não há intereseção
+			Vec3 color = rayTracing(r, MAX_DEPTH, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
-			//colors[index_col++] = (float)color.r;
-			//colors[index_col++] = (float)color.g;
-			//colors[index_col++] = (float)color.b;
+			colors[index_col++] = (float)color.x;
+			colors[index_col++] = (float)color.y;
+			colors[index_col++] = (float)color.z;
 
 			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
 				drawPoints();
@@ -343,14 +361,17 @@ void init(int argc, char* argv[])
 }
 
 int main(int argc, char* argv[])
-{
+{	
+	// Test Sphere
+	s = Sphere(Vec3( 0 , 0 , 4), 0.5, Vec3(0.239, 0.360, 1));
+
 	//INSERT HERE YOUR CODE FOR PARSING NFF FILES
 		//scene = new Scene();
 	//if (!(scene->load_nff("jap.nff"))) return 0;
-	RES_X = 32;
-	RES_Y = 32;
+	RES_X = 128;
+	RES_Y = 128;
 
-	c = Camera(Vec3(2.1, 1.3, 1.7),Vec3(0,0,0),Vec3(0,0,1), (double)45, RES_X, RES_Y);
+	c = Camera(Vec3(0, 0, 2),Vec3(0,0,0),Vec3(0,0,1), (double)45, RES_X, RES_Y);
 	c.print();
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto

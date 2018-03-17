@@ -23,6 +23,9 @@ public:
 		float module = sqrt( x*x + y*y + z*z );
 		return Vec3(x / module, y / module, z / module);
 	};
+	float dot(Vec3 v) const {
+		return (x*v.x) + (y*v.y) + (z*v.z);
+	}
 
 };
 
