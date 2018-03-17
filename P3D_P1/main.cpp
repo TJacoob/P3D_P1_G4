@@ -80,7 +80,7 @@ struct Ray
 };
 
 
-float dot(const Vec3 a, const Vec3 b) {
+float dot(Vec3 a, Vec3 b) {
 	return (a.x*b.x + a.y*b.y + a.z*b.z);
 }
 
@@ -110,12 +110,14 @@ struct Sphere
 		Vec3 d = ray.direction;
 		Vec3 oc = center - o;
 		float b = dot(oc, d);
-		float c = dot(oc, oc) - (radius * radius);
-		if (c > 0) {
+		float doc2 = dot(oc, oc);
+		
+		if (doc2 > (radius*radius)) {
 			if (b < 0) return false;
 		}
+		float c = doc2 - (radius*radius);
 
-		float r = b*b - dot(oc, oc) + (radius * radius);
+		float r = (b * b) - c;
 
 		if (r < 0) return false;
 
@@ -124,10 +126,10 @@ struct Sphere
 		float t1 = b + raizR;
 		float t;
 
-		if (dot(oc, oc) > (radius * radius)) {
+		if (doc2 >(radius * radius)) {
 			t = t0;
 		}
-		else if (dot(oc, oc) <= (radius * radius)) {
+		else if (doc2 <= (radius * radius)) {
 			t = t1;
 		}
 		else {
@@ -140,6 +142,15 @@ struct Sphere
 
 Ray camGetPrimaryRay(Camera *c, double x, float y)
 {
+
+	Vec3 dx = c->xe.normalize() * (c->w * ((float)((x / c->ResX) + 0.5)));
+	Vec3 dy = c->ye.normalize() * (c->h * ((float)((y / c->ResY) + 0.5)));
+	Vec3 dz = c->ze.normalize() * (-(c->df));
+
+
+	return Ray(c->eye, (dz+dy+dx));
+
+	/*
 	Vec3 tempZ = c->ze*(-c->df);
 
 	float calcY = c->h*((y / c->ResY) - 0.5);
@@ -149,15 +160,16 @@ Ray camGetPrimaryRay(Camera *c, double x, float y)
 	Vec3 tempX = c->xe*calcX;
 
 	Vec3 dir = (tempZ + tempY + tempX).normalize();
+
 	Ray r = Ray(c->eye, dir);
-	printf("RAIO LANCADO %g %g %g %g %g %g \n", c->eye.x, c->eye.y, c->eye.z, dir.x, dir.y, dir.z);
-	return r;
+	//printf("RAIO LANCADO %g %g %g %g %g %g \n", c->eye.x, c->eye.y, c->eye.z, dir.x, dir.y, dir.z);
+	return r;*/
 }
 
 Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
-	float tempT= 10000, prevT, lowestT;
+	float tempT = 10000, prevT, lowestT;
 
 	bool intersect = false;
 
@@ -178,13 +190,14 @@ Color rayTracing(Ray ray, int depth, float RefrIndex)
 				lowestT = tempT;
 			}
 			//Vec3 hitpoint = ray.origin + ray.direction*t;
+			printf("\nSPHERE INTERSECTADA!!!!!!!!! %g %g %g %g \n", sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
 		}
 	}
 
-	if (intersect){
+	if (intersect) {
 		c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
 	}
-	else{
+	else {
 		c = { background[0], background[1], background[2], 1 };
 	}
 	return c;
@@ -681,7 +694,7 @@ int main(int argc, char* argv[])
 	/* STOP PROGRAM TO TEST*/
 
 	vertices = (float*)malloc(size_vertices);
-	if (vertices == NULL) exit(1); 
+	if (vertices == NULL) exit(1);
 
 	colors = (float*)malloc(size_colors);
 	if (colors == NULL) exit(1);
