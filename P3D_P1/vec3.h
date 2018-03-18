@@ -16,6 +16,8 @@ struct Vec3 {
 		double df = sqrt((x*x) + (y*y) + (z*z));
 		return df;
 	}
+
+	Vec3 operator * (const Vec3 &v) const { return Vec3((y*v.z) - (z*v.y), -(x*v.z) + (z*v.x), (x*v.y) - (y*v.x)); };
 };
 
 

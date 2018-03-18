@@ -33,7 +33,7 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 	c->df = df;
 	printf("Dist�ncia da camara: %f\n", c->df);
 
-	c->h = (float)2 * df * tan(fovy / 2);
+	c->h = (float)2 * c->df * tan(fovy / 2);
 	printf("Altura: %f\n", c->h);
 
 	c->w = (float)(ResX / ResY) * (c->h);
@@ -41,22 +41,23 @@ _Camera* startCam(Camera *c, Vec3 eye, Vec3 at, Vec3 up, double fovy, double nea
 
 	float calc = (1 / df);
 	Vec3 temp2 = (eye - at);
-	temp2.x = temp2.x*calc;
-	temp2.y = temp2.y*calc;
-	temp2.z = temp2.z*calc;
-	c->ze = temp2;
+	//temp2.x = temp2.x*calc;
+	//temp2.y = temp2.y*calc;
+	//temp2.z = temp2.z*calc;
+	//c->ze = temp2;
+	c->ze = temp2 / c->df;
 
 
-	Vec3 tempX = Vec3(up.x * c->ze.x, up.y * c->ze.y, up.z * c->ze.z);
+
+	Vec3 tempX = up * c->ze;
 	float calcX = 1 / (tempX.module());
-	tempX.x = tempX.x * calcX;
-	tempX.y = tempX.y * calcX;
-	tempX.z = tempX.z * calcX;
-	c->xe = tempX;					//Resultado no input_file dá 0 0 1, é bom sinal?
+	//tempX.x = tempX.x * calcX;
+	//tempX.y = tempX.y * calcX;
+	//tempX.z = tempX.z * calcX;
+	c->xe = tempX * calcX;					//Resultado no input_file dá 0 0 1, é bom sinal?
 
 
-	Vec3 tempY = Vec3(c->ze.x * c->xe.x, c->ze.y * c->xe.y, c->ze.z * c->xe.z);
-	c->ye = tempY;
+	c->ye = c->ze*c->xe;;
 
 	printf("CAMERA VECTORS: \n");
 	printf("ze: %f %f %f\n", c->ze.x, c->ze.y, c->ze.z);

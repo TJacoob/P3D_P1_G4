@@ -84,6 +84,10 @@ float dot(Vec3 a, Vec3 b) {
 	return (a.x*b.x + a.y*b.y + a.z*b.z);
 }
 
+/*float cross(Vec3 a, Vec3 b) {
+	//(a2b3 - a3b2, a3b1 - a1b3, a1b2 - a2b1)
+	return (a.x*b.x + a.y*b.y + a.z*b.z);
+}*/
 
 struct Plane
 {
@@ -143,12 +147,12 @@ struct Sphere
 Ray camGetPrimaryRay(Camera *c, double x, float y)
 {
 
-	Vec3 dx = c->xe.normalize() * (c->w * ((float)((x / c->ResX) + 0.5)));
-	Vec3 dy = c->ye.normalize() * (c->h * ((float)((y / c->ResY) + 0.5)));
+	Vec3 dx = c->xe.normalize() * (c->w * ((float)((x / c->ResX) - 0.5)));
+	Vec3 dy = c->ye.normalize() * (c->h * ((float)((y / c->ResY) - 0.5)));
 	Vec3 dz = c->ze.normalize() * (-(c->df));
 
 
-	return Ray(c->eye, (dz+dy+dx));
+	return Ray(c->eye, (dz+dy+dx).normalize());
 
 	/*
 	Vec3 tempZ = c->ze*(-c->df);
