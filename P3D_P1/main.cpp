@@ -22,6 +22,7 @@
 #include "Ray.h"
 #include "Camera.h"
 #include "Sphere.h"
+#include "Plane.h"
 
 #define CAPTION "ray tracer"
 
@@ -30,6 +31,7 @@
 
 #define MAX_DEPTH 6
 #define MAX_SPHERES 10
+#define MAX_PLANES 5
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -46,12 +48,25 @@ GLuint VboId[2];
 GLuint VertexShaderId, FragmentShaderId, ProgramId;
 GLint UniformId;
 
+/*NFF FILE*/
+FILE * nff;
+
 int RES_X, RES_Y;
 
 Camera c;
 
+// Other Helpers
+Vec3 background;
+
 // Spheres Array
-Sphere s;
+float sphere[MAX_SPHERES][7];
+int num_spheres = 0;
+
+// Planes Array
+float plane[MAX_PLANES][12];
+int num_planes = 0;
+
+float latestF[8];
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
 int draw_mode = 0;
@@ -62,20 +77,56 @@ int WindowHandle = 0;
 
 Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 {
-	//float t0 = 100000, t1 = 100000;
-	for (int i = 0; i < depth; i++)
-	{
-		// printf("RAY SHOOTING AT %f %f %f\n",r.getPoint(c.view).x, r.getPoint(c.view).y, r.getPoint(c.view).z);
-		if (s.intersect(ray))
-		{
-			printf("HOUVE UMA INTERESEÇÃO !!!!!!!!!!!!!!!!!!!!!!\n");
-			return Vec3(0.239, 0.360, 1);
+	Vec3 c = background;
+	Vec3 normal;
+	float tempT, shortT;
+
+	bool intersect = false;
+
+	//PLANE INTERSECTION CYCLE
+	for (int j = 0; j <= num_planes; j++) {
+		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]));
+
+		shortT = p.intersect(ray);
+
+		if (shortT != 0) {
+			intersect = true;
+			c = p.color;
+			// normal = normal do plano
 		}
+		else {
+
+		}
+	}
+
+	//SPHERE INTERSECTION CYCLE
+	for (int i = 0; i <= num_spheres; i++) {
+		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]));
+
+		tempT = s.intersect(ray);
+
+		if (tempT == 0) {
+
+		}
+		else {
+			intersect = true;
+			if (tempT < shortT) {
+				shortT = tempT;
+				c = s.color;
+				// normal = normal da esfera
+			}
+			//Vec3 hitpoint = ray.origin + ray.direction*t;
+		}
+
+	}
+
+	if (intersect)
+	{
+		Vec3 hitpoint = ray.origin + ray.direction*shortT;
 	};
 
-	//printf("nope\n");
-	return Vec3(1, 0.078, 0.078);		
-}
+	return c;
+};
 
 /////////////////////////////////////////////////////////////////////// ERRORS
 
@@ -241,9 +292,6 @@ void renderScene()
 
 			//YOUR 2 FUNTIONS:
 			Ray r = c.getPrimaryRay(x, y);
-			//r.print();
-			// printf("RAY SHOOTING AT %f %f %f\n",r.getPoint(c.view).x, r.getPoint(c.view).y, r.getPoint(c.view).z);
-			// RayTracing vai chamar r.getPoint(t) em que t é a profundidade, e vamos iterar o getPoint até encontrar alguma coisa, ou atingir o nosso limite, se chegar ao limite é pq não há intereseção
 			Vec3 color = rayTracing(r, MAX_DEPTH, 1.0);
 
 			vertices[index_pos++] = (float)x;
@@ -349,6 +397,87 @@ void setupGLUT(int argc, char* argv[])
 	}
 }
 
+// NFF Parser Helpers
+void setBackground() {
+	float holder[3];
+	if (fscanf(nff, " %g %g %g", &holder[0], &holder[1], &holder[2]) != 0) {
+		background = Vec3(holder[0], holder[1], holder[2]);
+	}
+}
+
+void setF() {
+	float f[3];
+	if (fscanf(nff, "rom %g %g %g", &f[0], &f[1], &f[2]) != 0) {
+		printf("FROM: %g %g %g\n", f[0], f[1], f[2]);
+		c.setEye(Vec3(f[0], f[1], f[2]));
+	}
+	else {
+		if (fscanf(nff, " %g %g %g %g %g %g %g %g", &latestF[0], &latestF[1], &latestF[2], &latestF[3], &latestF[4], &latestF[5], &latestF[6], &latestF[7]) != 0) {
+			printf("FILL SHADE %d: %g %g %g %g %g %g %g %g\n", latestF[0], latestF[1], latestF[2], latestF[3], latestF[4], latestF[5], latestF[6], latestF[7]);
+		}
+	}
+}
+
+void setUp() {
+	float up[3];
+	if (fscanf(nff, "p %g %g %g", &up[0], &up[1], &up[2]) != 0) {
+		printf("UP: %g %g %g\n", up[0], up[1], up[2]);
+		c.setUp(Vec3(up[0], up[1], up[2]));
+	}
+}
+
+void setA() {
+	float at[3], angle;
+	if (fscanf(nff, "t %g %g %g", &at[0], &at[1], &at[2]) != 0) {
+		printf("AT: %g %g %g\n", at[0], at[1], at[2]);
+		c.setAt(Vec3(at[0], at[1], at[2]));
+	}
+	else if (fscanf(nff, "ngle %g", &angle) != 0) {
+		printf("ANGLE: %g\n", angle);
+		c.setAngle(angle);
+	}
+}
+
+void setResolution() {
+	if (fscanf(nff, "esolution %d %d", &RES_X, &RES_Y) != 0) {
+		printf("RESOLUTION: %d %d\n", RES_X, RES_Y);
+		c.setRes(RES_X, RES_Y);
+	}
+}
+
+void setSphere() {
+
+	while (num_spheres < MAX_SPHERES) {
+		if (sphere[num_spheres][0] == NULL && sphere[num_spheres][1] == NULL && sphere[num_spheres][2] == NULL && sphere[num_spheres][3] == NULL && sphere[num_spheres][4] == NULL && sphere[num_spheres][5] == NULL && sphere[num_spheres][6] == NULL) {
+			break;
+		}
+		num_spheres++;
+	}
+
+	if (fscanf(nff, "%g %g %g %g", &sphere[num_spheres][0], &sphere[num_spheres][1], &sphere[num_spheres][2], &sphere[num_spheres][3]) != 0) {
+		sphere[num_spheres][4] = latestF[0];
+		sphere[num_spheres][5] = latestF[1];
+		sphere[num_spheres][6] = latestF[2];
+		printf("SPHERE %d: %g %g %g %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3]);
+	}
+}
+
+void setPlane() {
+	while (num_planes < MAX_PLANES) {
+		if (plane[num_planes][0] == NULL) {
+			break;
+		}
+		num_planes++;
+	}
+
+	if (fscanf(nff, "l %g %g %g %g %g %g %g %g %g", &plane[num_planes][0], &plane[num_planes][1], &plane[num_planes][2], &plane[num_planes][3], &plane[num_planes][4], &plane[num_planes][5], &plane[num_planes][6], &plane[num_planes][7], &plane[num_planes][8]) != 0) {
+		plane[num_planes][9] = latestF[0];
+		plane[num_planes][10] = latestF[1];
+		plane[num_planes][11] = latestF[2];
+		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8]);
+	}
+}
+
 void init(int argc, char* argv[])
 {
 	setupGLUT(argc, argv);
@@ -363,15 +492,79 @@ void init(int argc, char* argv[])
 int main(int argc, char* argv[])
 {	
 	// Test Sphere
-	s = Sphere(Vec3( 0 , 0 , 4), 0.5, Vec3(0.239, 0.360, 1));
+	//s = Sphere(Vec3( 0 , 0 , 0), 1, Vec3(0.078, 1, 0.207));
 
-	//INSERT HERE YOUR CODE FOR PARSING NFF FILES
-		//scene = new Scene();
-	//if (!(scene->load_nff("jap.nff"))) return 0;
-	RES_X = 128;
-	RES_Y = 128;
+	char ch;
 
-	c = Camera(Vec3(0, 0, 2),Vec3(0,0,0),Vec3(0,0,1), (double)45, RES_X, RES_Y);
+	//nff = fopen("input_file_test.nff", "r");
+	nff = fopen("input_file.nff", "r");
+	if (nff == NULL) {
+		return 0;
+	}
+
+	while ((ch = getc(nff)) != EOF) {
+		switch (ch) {
+		case ' ':
+		case '\t':
+		case '\n':
+		case '\f':
+		case '\r':
+			continue;
+		case '#':
+			break;
+			/*Comment*/
+		case 'b':
+			setBackground();
+			printf("BACKGROUND: %f %f %f\n", background.x, background.y, background.z);
+			break;
+			/* Background color. */
+		case 'v':
+			printf("VIEWPOINT SECTION\n");
+			break;
+			/* Viewpoint Section */
+		case 'f':
+			setF();
+			c.reCalc();
+			break;
+			/* From and F Section*/
+		case 'a':
+			setA();
+			c.reCalc();
+			break;
+			/* Angle and at Section*/
+		case 'u':
+			setUp();
+			c.reCalc();
+			break;
+			/* Up Vector Section*/
+		case 'h':
+			//setHither();
+			break;
+			/* Hither Section*/
+		case 'r':
+			setResolution();
+			c.reCalc();
+			break;
+			/* Resolution Section*/
+		case 'l':
+			//setLight();
+			break;
+			/* Light Section*/
+		case 'p':
+			setPlane();
+			break;
+			/* Plane Section*/
+		case 's':
+			setSphere();
+			break;
+			/* Sphere Section*/
+		default:
+			break;
+			//exit(1);
+		}
+	}
+
+	//c = Camera(Vec3(2.1, 1.3, 1.7),Vec3(0,0,0),Vec3(0,0,1), (double)45, RES_X, RES_Y);
 	c.print();
 
 	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto

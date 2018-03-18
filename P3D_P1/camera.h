@@ -30,15 +30,29 @@ public:
 		ye = ze * xe;
 	};
 	
+	// Setters
+	void setEye(Vec3 e) { eye = e; };
+	void setAt(Vec3 a) { at = a; };
+	void setUp(Vec3 u) { up = u; };
+	void setAngle(float a) { angle = a; };
+	void setRes(int X, int Y) { ResX = X; ResY = Y; };
+	void reCalc() {
+		view = (at - eye).module();
+		height = 2 * view * tan(angle / 2);
+		width = height * (ResX / ResY);
+		ze = (eye - at) * (1 / (eye - at).module());
+		xe = (up*ze) * (1 / (up*ze).module());
+		ye = ze * xe;
+	}
+
 	// Methods
 	Ray getPrimaryRay(double x, double y)
 	{
-		Vec3 dx = xe.normalize() * width * ((float)( (x / ResX) +0.5));
-		Vec3 dy = ye.normalize() * height * ((float)( (y / ResY) + 0.5));
+		Vec3 dx = xe.normalize() * width * ((float)( (x / ResX) - 0.5));
+		Vec3 dy = ye.normalize() * height * ((float)( (y / ResY) - 0.5));
 		Vec3 dz = ze.normalize() * (-view);
-		return Ray(eye, dz+dy+dx);
+		return Ray(eye, (dz+dy+dx).normalize());
 	}
-
 
 	void print() {
 		printf("CAMERA SETTINGS:\n");
