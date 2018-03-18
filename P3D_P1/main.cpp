@@ -60,8 +60,6 @@ FILE * nff;
 
 float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3], plane[MAX_PLANE][9] ;
 
-float tempT, prevT, lowestT;
-
 int resolution[2];
 
 char* str;
@@ -85,19 +83,27 @@ float dot(Vec3 a, Vec3 b) {
 	return (a.x*b.x + a.y*b.y + a.z*b.z);
 }
 
-/*float cross(Vec3 a, Vec3 b) {
-//(a2b3 - a3b2, a3b1 - a1b3, a1b2 - a2b1)
-return (a.x*b.x + a.y*b.y + a.z*b.z);
-}*/
-
-
 
 struct Plane
 {
 	Vec3 point1, point2, point3;
 	Plane(Vec3 p1, Vec3 p2, Vec3 p3) : point1(p1), point2(p2), point3(p3) {}
-	bool intersect(Ray ray, float t) const {
+	float intersect(Ray ray) const {
+		Vec3 u = point2 - point1;
+		Vec3 v = point3 - point1;
+		Vec3 normal = u * v;
 		
+		if (dot(normal, ray.direction) == 0) {
+			return 0;
+		}
+		float ti = -((dot(ray.origin - point1, normal)) / dot(normal, ray.direction));
+		
+		if (ti < 0) {
+			return 0;
+		}
+		else {
+			return ti;
+		}
 	}
 };
 
@@ -153,45 +159,35 @@ Ray camGetPrimaryRay(Camera *c, double x, float y)
 
 
 	return Ray(c->eye, (dz + dy + dx).normalize());
-
-	/*
-	Vec3 tempZ = c->ze*(-c->df);
-
-	float calcY = c->h*((y / c->ResY) - 0.5);
-	Vec3 tempY = c->ye*calcY;
-
-	float calcX = c->w*((x / c->ResX) - 0.5);
-	Vec3 tempX = c->xe*calcX;
-
-	Vec3 dir = (tempZ + tempY + tempX).normalize();
-
-	Ray r = Ray(c->eye, dir);
-	//printf("RAIO LANCADO %g %g %g %g %g %g \n", c->eye.x, c->eye.y, c->eye.z, dir.x, dir.y, dir.z);
-	return r;*/
 }
 
 Color rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Color c;
-	float tempT = 10000, prevT, lowestT;
+	float tempT, shortT;
 
 	bool intersect = false;
 
+	//PLANE INTERSECTION CYCLE
 	for (int j = 0; j <= num_planes; j++) {
 		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]));
-		/*
-		if (p.intersect) {
+		
+		shortT = p.intersect(ray);
 
+		if (shortT != 0) {
+			intersect = true;
+			c = { fillShade[0][0], fillShade[0][1], fillShade[0][2], 1 };
 		}
 		else {
 
-		}*/
+		}
 	}
 
+
+	//SPHERE INTERSECTION CYCLE
 	for (int i = 0; i <= num_spheres; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
 
-		prevT = tempT;
 		tempT = s.intersect(ray);
 
 		if (tempT == 0) {
@@ -199,16 +195,16 @@ Color rayTracing(Ray ray, int depth, float RefrIndex)
 		}
 		else {
 			intersect = true;
-			if (tempT < prevT) {
-				lowestT = tempT;
+			if (tempT < shortT) {
+				shortT = tempT;
+				c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
 			}
 			//Vec3 hitpoint = ray.origin + ray.direction*t;
-			printf("\nSPHERE INTERSECTADA!!!!!!!!! %g %g %g %g \n", sphere[i][0], sphere[i][1], sphere[i][2], sphere[i][3]);
 		}
+		
 	}
 
 	if (intersect) {
-		c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
 	}
 	else {
 		c = { background[0], background[1], background[2], 1 };
