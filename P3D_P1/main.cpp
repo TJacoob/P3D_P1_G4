@@ -23,6 +23,7 @@
 #include "Camera.h"
 #include "Sphere.h"
 #include "Plane.h"
+#include "Light.h"
 
 #define CAPTION "ray tracer"
 
@@ -32,6 +33,7 @@
 #define MAX_DEPTH 6
 #define MAX_SPHERES 10
 #define MAX_PLANES 5
+#define MAX_LIGHTS 5
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -65,6 +67,10 @@ int num_spheres = 0;
 // Planes Array
 float plane[MAX_PLANES][12];
 int num_planes = 0;
+
+// Lights Array
+float light[MAX_LIGHTS][6];	// X Y Z R G B
+int num_lights = 0;
 
 float latestF[8];
 
@@ -475,6 +481,21 @@ void setPlane() {
 		plane[num_planes][10] = latestF[1];
 		plane[num_planes][11] = latestF[2];
 		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8]);
+	}
+}
+
+void setLight() {
+	int i = 0;
+
+	while (i < MAX_LIGHTS) {
+		if (light[i][0] == NULL && light[i][1] == NULL && light[i][2] == NULL && light[i][3] == NULL && light[i][4] == NULL && light[i][5] == NULL) {
+			break;
+		}
+		i++;
+	}
+
+	if (fscanf(nff, "%g %g %g %g %g %g", &light[i][0], &light[i][1], &light[i][2], &light[i][3], &light[i][4], &light[i][5]) != 0) {
+		printf("LIGHT %d: %g %g %g %g %g %g\n", i, light[i][0], light[i][1], light[i][2], light[i][3], light[i][4], light[i][5]);
 	}
 }
 
