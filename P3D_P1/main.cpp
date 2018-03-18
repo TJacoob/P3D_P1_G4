@@ -27,6 +27,7 @@
 #define MAX_DEPTH 6
 #define MAX_LIGHTS 6
 #define MAX_SPHERE 20
+#define MAX_PLANE 20
 #define MAX_OBJECTS 6
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
@@ -44,7 +45,7 @@ GLuint VboId[2];
 GLuint VertexShaderId, FragmentShaderId, ProgramId;
 GLint UniformId;
 
-int num_spheres = 0;
+int num_spheres = 0, num_planes = 0;
 
 //Scene* scene = NULL;
 int RES_X, RES_Y;
@@ -57,7 +58,7 @@ int WindowHandle = 0;
 /*NFF FILE*/
 FILE * nff;
 
-float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3];
+float background[3], f[3], at[3], up[3], angle, hither, light[MAX_LIGHTS][6], fillShade[MAX_OBJECTS][8], sphere[MAX_SPHERE][4], p1[3], p2[3], p3[3], plane[MAX_PLANE][9] ;
 
 float tempT, prevT, lowestT;
 
@@ -85,19 +86,18 @@ float dot(Vec3 a, Vec3 b) {
 }
 
 /*float cross(Vec3 a, Vec3 b) {
-	//(a2b3 - a3b2, a3b1 - a1b3, a1b2 - a2b1)
-	return (a.x*b.x + a.y*b.y + a.z*b.z);
+//(a2b3 - a3b2, a3b1 - a1b3, a1b2 - a2b1)
+return (a.x*b.x + a.y*b.y + a.z*b.z);
 }*/
+
+
 
 struct Plane
 {
 	Vec3 point1, point2, point3;
 	Plane(Vec3 p1, Vec3 p2, Vec3 p3) : point1(p1), point2(p2), point3(p3) {}
-	Vec3 normalize(Vec3 p1, Vec3 p2, Vec3 p3) {
-		//Vec3 vec.crossProduct(p1 - p2, p2 - p1);
-	}
 	bool intersect(Ray ray, float t) const {
-		//Vec3 n =  ;
+		
 	}
 };
 
@@ -115,7 +115,7 @@ struct Sphere
 		Vec3 oc = center - o;
 		float b = dot(oc, d);
 		float doc2 = dot(oc, oc);
-		
+
 		if (doc2 > (radius*radius)) {
 			if (b < 0) return false;
 		}
@@ -152,7 +152,7 @@ Ray camGetPrimaryRay(Camera *c, double x, float y)
 	Vec3 dz = c->ze.normalize() * (-(c->df));
 
 
-	return Ray(c->eye, (dz+dy+dx).normalize());
+	return Ray(c->eye, (dz + dy + dx).normalize());
 
 	/*
 	Vec3 tempZ = c->ze*(-c->df);
@@ -177,7 +177,16 @@ Color rayTracing(Ray ray, int depth, float RefrIndex)
 
 	bool intersect = false;
 
-	Plane p(Vec3(p1[0], p1[1], p1[2]), Vec3(p2[0], p2[1], p2[2]), Vec3(p3[0], p3[1], p3[2]));
+	for (int j = 0; j <= num_planes; j++) {
+		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]));
+		/*
+		if (p.intersect) {
+
+		}
+		else {
+
+		}*/
+	}
 
 	for (int i = 0; i <= num_spheres; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3]);
@@ -584,8 +593,15 @@ void setSphere() {
 }
 
 void setPlane() {
-	if (fscanf(nff, "l %g %g %g %g %g %g %g %g %g", &p1[0], &p1[1], &p1[2], &p2[0], &p2[1], &p2[2], &p3[0], &p3[1], &p3[2]) != 0) {
-		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]);
+	while (num_planes < MAX_PLANE) {
+		if (plane[num_planes][0] == NULL) {
+			break;
+		}
+		num_planes++;
+	}
+
+	if (fscanf(nff, "l %g %g %g %g %g %g %g %g %g", &plane[num_planes][0], &plane[num_planes][1], &plane[num_planes][2], &plane[num_planes][3], &plane[num_planes][4], &plane[num_planes][5], &plane[num_planes][6], &plane[num_planes][7], &plane[num_planes][8]) != 0) {
+		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8]);
 	}
 }
 
