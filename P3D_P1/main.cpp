@@ -199,12 +199,14 @@ Color rayTracing(Ray ray, int depth, float RefrIndex)
 				shortT = tempT;
 				c = { fillShade[1][0], fillShade[1][1], fillShade[1][2], 1 };
 			}
-			//Vec3 hitpoint = ray.origin + ray.direction*t;
+			
 		}
 		
 	}
 
 	if (intersect) {
+		Vec3 hitpoint = ray.origin + ray.direction*shortT;
+		printf("This is the hitpoint - %g %g %g\n", hitpoint.x, hitpoint.y, hitpoint.z);
 	}
 	else {
 		c = { background[0], background[1], background[2], 1 };
