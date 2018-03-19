@@ -49,6 +49,14 @@ public:
 		return t;
 	}
 
+	Vec3 getNormal( Ray r, float hitpoint )	// Depende do hitpoint
+	{
+		float x = (r.origin.x + (r.direction.x * hitpoint) - center.x)/ radius;
+		float y = (r.origin.y + (r.direction.y * hitpoint) - center.y) / radius;
+		float z = (r.origin.z + (r.direction.z * hitpoint) - center.z) / radius;
+		return Vec3(x, y, z);
+	}
+
 	void print() {
 		printf("ESFERA:\n");
 		printf("CENTRO EM: %f %f %f - RAIO: %f\n", center.x, center.y, center.z, radius);

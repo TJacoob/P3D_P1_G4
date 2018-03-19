@@ -30,6 +30,13 @@ public:
 		}
 	}
 
+	Vec3 getNormal()	// É independente do ponto de interesecção pq a normal é igual ao longo de todo o plano
+	{
+		Vec3 u = point2 - point1;
+		Vec3 v = point3 - point1;
+		return u * v;
+	}
+
 };
 
 #endif

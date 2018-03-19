@@ -98,7 +98,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		if (shortT != 0) {
 			intersect = true;
 			c = p.color;
-			// normal = normal do plano
+			normal = p.getNormal();
 		}
 		else {
 
@@ -119,7 +119,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			if (tempT < shortT) {
 				shortT = tempT;
 				c = s.color;
-				// normal = normal da esfera
+				normal = s.getNormal(ray, tempT);
 			}
 			//Vec3 hitpoint = ray.origin + ray.direction*t;
 		}
@@ -129,6 +129,12 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	if (intersect)
 	{
 		Vec3 hitpoint = ray.origin + ray.direction*shortT;
+		// recuperar normal que vem de trás
+
+		for (int l = 0; l < num_lights; l++)
+		{
+				// Vetor unitario do hitpoint à origem da luz
+		}
 	};
 
 	return c;
