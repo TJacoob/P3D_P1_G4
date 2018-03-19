@@ -10,10 +10,11 @@ public:
 	Vec3 center;
 	float radius, radius2;
 	Vec3 color;
+	float Kdif, Ks;		// Difuse and Specular components
 
 	// Construtores
-	Sphere() : center(Vec3(0, 0, 0)), radius(1), color(Vec3(0.678, 1.000, 0.184)) {}; // sphere at (0,0,0) with 1, bright green
-	Sphere(Vec3 center, float radius, Vec3 color) : center(center), radius(radius), radius2(radius*radius), color(color) {};
+	Sphere() : center(Vec3(0, 0, 0)), radius(1), color(Vec3(0.678, 1.000, 0.184)), Kdif(1), Ks(1) {}; // sphere at (0,0,0) with 1, bright green
+	Sphere(Vec3 center, float radius, Vec3 color, float kdif, float ks) : center(center), radius(radius), radius2(radius*radius), color(color), Kdif(kdif), Ks(ks) {};
 
 	// Methods
 	float intersect(Ray ray) const {
@@ -52,9 +53,9 @@ public:
 	Vec3 getNormal( Ray r, float hitpoint )	// Depende do hitpoint
 	{
 		float x = (r.origin.x + (r.direction.x * hitpoint) - center.x)/ radius;
-		float y = (r.origin.y + (r.direction.y * hitpoint) - center.y) / radius;
-		float z = (r.origin.z + (r.direction.z * hitpoint) - center.z) / radius;
-		return Vec3(x, y, z);
+		float y = (r.origin.y + (r.direction.y * hitpoint) - center.y)/ radius;
+		float z = (r.origin.z + (r.direction.z * hitpoint) - center.z)/ radius;
+		return Vec3(x, y, z).normalize();
 	}
 
 	void print() {

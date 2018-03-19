@@ -9,8 +9,9 @@ public:
 
 	Vec3 point1, point2, point3;
 	Vec3 color;
+	float Kdif, Ks;		// Difuse and Specular components
 
-	Plane(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 c) : point1(p1), point2(p2), point3(p3), color(c) {};
+	Plane(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 c, float kdif, float ks) : point1(p1), point2(p2), point3(p3), color(c), Kdif(kdif), Ks(ks) {};
 
 	float intersect(Ray ray) const {
 		Vec3 u = point2 - point1;
@@ -34,7 +35,7 @@ public:
 	{
 		Vec3 u = point2 - point1;
 		Vec3 v = point3 - point1;
-		return u * v;
+		return (u * v).normalize();
 	}
 
 };

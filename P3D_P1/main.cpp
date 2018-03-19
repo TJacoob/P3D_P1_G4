@@ -61,11 +61,11 @@ Camera c;
 Vec3 background;
 
 // Spheres Array
-float sphere[MAX_SPHERES][7];
+float sphere[MAX_SPHERES][9];
 int num_spheres = 0;
 
 // Planes Array
-float plane[MAX_PLANES][12];
+float plane[MAX_PLANES][14];
 int num_planes = 0;
 
 // Lights Array
@@ -86,12 +86,13 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	Vec3 c = background;
 	Vec3 normal;
 	float tempT, shortT;
+	float Kdif, Ks;
 
 	bool intersect = false;
 
 	//PLANE INTERSECTION CYCLE
 	for (int j = 0; j <= num_planes; j++) {
-		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]));
+		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13]);
 
 		shortT = p.intersect(ray);
 
@@ -99,6 +100,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			intersect = true;
 			c = p.color;
 			normal = p.getNormal();
+			Kdif = p.Kdif;
+			Ks = p.Ks;
 		}
 		else {
 
@@ -107,7 +110,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	//SPHERE INTERSECTION CYCLE
 	for (int i = 0; i <= num_spheres; i++) {
-		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]));
+		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8]);
 
 		tempT = s.intersect(ray);
 
@@ -120,6 +123,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				shortT = tempT;
 				c = s.color;
 				normal = s.getNormal(ray, tempT);
+				Kdif = s.Kdif;
+				Ks = s.Ks;
 			}
 			//Vec3 hitpoint = ray.origin + ray.direction*t;
 		}
@@ -130,11 +135,50 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	{
 		Vec3 hitpoint = ray.origin + ray.direction*shortT;
 		// recuperar normal que vem de trás
+		Vec3 assistantColor = Vec3(1,1,1);
 
-		for (int l = 0; l < num_lights; l++)
+		for (int h = 0; h < num_lights; h++)
 		{
-				// Vetor unitario do hitpoint à origem da luz
+			//printf("HEEEEEEEEEEEEEEEEEEERE!!!!!!!!!!!!!!!\n");
+			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
+			Vec3 L = (hitpoint - ls.position).normalize();
+			Ray shadowRay = Ray(hitpoint, L);
+			//normal = Vec3(-normal.x, -normal.y, -normal.z);
+			/*
+			printf("----------------\n");
+			printf("L: %f %f %f\n", L.x, L.y, L.z);
+			printf("Normal: %f %f %f\n", normal.x, normal.y, normal.z);
+			printf("Dot: %f\n", L.dot(normal));
+			*/
+	
+			if ( L.dot(normal) > 0) // Raio a ir para fora do objeto?
+			{
+				//printf("HEREEEEEEE!!!!!!!!!!!!!!!!!\n");
+
+				Vec3 shadowColor = rayTracing(shadowRay, depth+1, 1);
+				//printf("SOMBRA: %f %f %f\n", shadowColor.x, shadowColor.y, shadowColor.z);
+				if ( shadowColor.equals(background) ) // Não há interseção com nada, é pq está caminho aberto até à luz
+				{
+					//printf("AHHHHHHHHHHHHHHHHHHHHHHHH\n");
+					//c = Vec3(0,0,0);
+					assistantColor = assistantColor + (ls.color*Kdif*(normal.dot(L))) ;//+ (ls.color*Ks);
+				}
+				else // Caminho está obstruído por um objeto, é suposto haver sombra?
+				{
+					printf("SOMBRA\n");
+					assistantColor = Vec3(1, 1, 1);
+
+				}
+			}
 		}
+
+		c = c + assistantColor;
+
+		if (depth >= MAX_DEPTH) {
+			printf("depth: %d\n", depth);
+			return c;
+		}
+
 	};
 
 	return c;
@@ -304,7 +348,7 @@ void renderScene()
 
 			//YOUR 2 FUNTIONS:
 			Ray r = c.getPrimaryRay(x, y);
-			Vec3 color = rayTracing(r, MAX_DEPTH, 1.0);
+			Vec3 color = rayTracing(r, 1, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
@@ -470,6 +514,8 @@ void setSphere() {
 		sphere[num_spheres][4] = latestF[0];
 		sphere[num_spheres][5] = latestF[1];
 		sphere[num_spheres][6] = latestF[2];
+		sphere[num_spheres][7] = latestF[3];
+		sphere[num_spheres][8] = latestF[4];
 		printf("SPHERE %d: %g %g %g %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3]);
 	}
 }
@@ -486,11 +532,14 @@ void setPlane() {
 		plane[num_planes][9] = latestF[0];
 		plane[num_planes][10] = latestF[1];
 		plane[num_planes][11] = latestF[2];
+		plane[num_planes][12] = latestF[3];
+		plane[num_planes][13] = latestF[4];
 		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8]);
 	}
 }
 
 void setLight() {
+
 	int i = 0;
 
 	while (i < MAX_LIGHTS) {
@@ -502,6 +551,7 @@ void setLight() {
 
 	if (fscanf(nff, "%g %g %g %g %g %g", &light[i][0], &light[i][1], &light[i][2], &light[i][3], &light[i][4], &light[i][5]) != 0) {
 		printf("LIGHT %d: %g %g %g %g %g %g\n", i, light[i][0], light[i][1], light[i][2], light[i][3], light[i][4], light[i][5]);
+		num_lights++;
 	}
 }
 
@@ -523,8 +573,8 @@ int main(int argc, char* argv[])
 
 	char ch;
 
+	nff = fopen("input_file_test.nff", "r");
 	//nff = fopen("input_file_test.nff", "r");
-	nff = fopen("input_file.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
@@ -574,7 +624,7 @@ int main(int argc, char* argv[])
 			break;
 			/* Resolution Section*/
 		case 'l':
-			//setLight();
+			setLight();
 			break;
 			/* Light Section*/
 		case 'p':
