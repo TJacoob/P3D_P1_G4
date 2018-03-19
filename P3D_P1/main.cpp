@@ -133,22 +133,22 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	if (intersect)
 	{
-		Vec3 hitpoint = ray.origin + ray.direction*shortT;
-		/* recuperar normal que vem de trás
-		Vec3 assistantColor = Vec3(1,1,1);
+		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();
+		// recuperar normal que vem de trás
+		Vec3 assistantColor;
 
-		for (int h = 0; h < num_lights; h++)
+		for (int h = 0; h <= num_lights; h++)
 		{
 			//printf("HEEEEEEEEEEEEEEEEEEERE!!!!!!!!!!!!!!!\n");
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
-			Vec3 L = (hitpoint - ls.position).normalize();
+			Vec3 L = (ls.position - hitpoint).normalize();
 			Ray shadowRay = Ray(hitpoint, L);
-			//normal = Vec3(-normal.x, -normal.y, -normal.z);
+			normal = Vec3(-normal.x, -normal.y, -normal.z);
 			/*
 			printf("----------------\n");
 			printf("L: %f %f %f\n", L.x, L.y, L.z);
 			printf("Normal: %f %f %f\n", normal.x, normal.y, normal.z);
-			printf("Dot: %f\n", L.dot(normal));
+			printf("Dot: %f\n", L.dot(normal));*/
 			
 	
 			if ( L.dot(normal) > 0) // Raio a ir para fora do objeto?
@@ -161,7 +161,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				{
 					//printf("AHHHHHHHHHHHHHHHHHHHHHHHH\n");
 					//c = Vec3(0,0,0);
-					assistantColor = assistantColor + (ls.color*Kdif*(normal.dot(L))) ;//+ (ls.color*Ks);
+					c = c + (ls.color*Kdif*(normal.dot(L))) ;//+ (ls.color*Ks);
 				}
 				else // Caminho está obstruído por um objeto, é suposto haver sombra?
 				{
@@ -170,13 +170,12 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 				}
 			}
-		}
-
-		c = c + assistantColor;*/
-
-		if (depth >= MAX_DEPTH) {
-			printf("depth: %d\n", depth);
-			return c;
+			//c = c + assistantColor;
+			
+			if (depth >= MAX_DEPTH) {
+				printf("depth: %d\n", depth);
+				return c;
+			}
 		}
 
 		//IF REFLECIVE
