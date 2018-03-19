@@ -10,11 +10,11 @@ public:
 	Vec3 center;
 	float radius, radius2;
 	Vec3 color;
-	float Kdif, Ks;		// Difuse and Specular components
+	float Kdif, Ks, Shine, Trans, IndexRef;		// Difuse and Specular components
 
 	// Construtores
 	Sphere() : center(Vec3(0, 0, 0)), radius(1), color(Vec3(0.678, 1.000, 0.184)), Kdif(1), Ks(1) {}; // sphere at (0,0,0) with 1, bright green
-	Sphere(Vec3 center, float radius, Vec3 color, float kdif, float ks) : center(center), radius(radius), radius2(radius*radius), color(color), Kdif(kdif), Ks(ks) {};
+	Sphere(Vec3 center, float radius, Vec3 color, float kdif, float ks, float shine, float trans, float indexRef) : center(center), radius(radius), radius2(radius*radius), color(color), Kdif(kdif), Ks(ks), Shine(shine), Trans(trans), IndexRef(indexRef) {};
 
 	// Methods
 	float intersect(Ray ray) const {

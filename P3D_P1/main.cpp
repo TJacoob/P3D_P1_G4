@@ -61,11 +61,11 @@ Camera c;
 Vec3 background;
 
 // Spheres Array
-float sphere[MAX_SPHERES][9];
+float sphere[MAX_SPHERES][12];
 int num_spheres = 0;
 
 // Planes Array
-float plane[MAX_PLANES][14];
+float plane[MAX_PLANES][17];
 int num_planes = 0;
 
 // Lights Array
@@ -92,7 +92,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	//PLANE INTERSECTION CYCLE
 	for (int j = 0; j <= num_planes; j++) {
-		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13]);
+		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
 
 		shortT = p.intersect(ray);
 
@@ -110,7 +110,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	//SPHERE INTERSECTION CYCLE
 	for (int i = 0; i <= num_spheres; i++) {
-		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8]);
+		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
 
 		tempT = s.intersect(ray);
 
@@ -134,7 +134,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	if (intersect)
 	{
 		Vec3 hitpoint = ray.origin + ray.direction*shortT;
-		// recuperar normal que vem de trás
+		/* recuperar normal que vem de trás
 		Vec3 assistantColor = Vec3(1,1,1);
 
 		for (int h = 0; h < num_lights; h++)
@@ -149,7 +149,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			printf("L: %f %f %f\n", L.x, L.y, L.z);
 			printf("Normal: %f %f %f\n", normal.x, normal.y, normal.z);
 			printf("Dot: %f\n", L.dot(normal));
-			*/
+			
 	
 			if ( L.dot(normal) > 0) // Raio a ir para fora do objeto?
 			{
@@ -166,19 +166,22 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				else // Caminho está obstruído por um objeto, é suposto haver sombra?
 				{
 					printf("SOMBRA\n");
-					assistantColor = Vec3(1, 1, 1);
+					//assistantColor = Vec3(1, 1, 1);
 
 				}
 			}
 		}
 
-		c = c + assistantColor;
+		c = c + assistantColor;*/
 
 		if (depth >= MAX_DEPTH) {
 			printf("depth: %d\n", depth);
 			return c;
 		}
 
+		//IF REFLECIVE
+
+		//IF TRANSLUCID
 	};
 
 	return c;
@@ -202,7 +205,7 @@ void checkOpenGLError(std::string error)
 {
 	if (isOpenGLError()) {
 		std::cerr << error << std::endl;
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
 	}
 }
 /////////////////////////////////////////////////////////////////////// SHADERs
@@ -449,7 +452,7 @@ void setupGLUT(int argc, char* argv[])
 	WindowHandle = glutCreateWindow(CAPTION);
 	if (WindowHandle < 1) {
 		std::cerr << "ERROR: Could not create a new rendering window." << std::endl;
-		exit(EXIT_FAILURE);
+		//exit(EXIT_FAILURE);
 	}
 }
 
@@ -516,7 +519,10 @@ void setSphere() {
 		sphere[num_spheres][6] = latestF[2];
 		sphere[num_spheres][7] = latestF[3];
 		sphere[num_spheres][8] = latestF[4];
-		printf("SPHERE %d: %g %g %g %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3]);
+		sphere[num_spheres][9] = latestF[5];
+		sphere[num_spheres][10] = latestF[6];
+		sphere[num_spheres][11] = latestF[7];
+		printf("SPHERE %d: %g %g %g %g  SHINE %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3], sphere[num_spheres][9]);
 	}
 }
 
@@ -534,7 +540,10 @@ void setPlane() {
 		plane[num_planes][11] = latestF[2];
 		plane[num_planes][12] = latestF[3];
 		plane[num_planes][13] = latestF[4];
-		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8]);
+		plane[num_planes][14] = latestF[5];
+		plane[num_planes][15] = latestF[6];
+		plane[num_planes][16] = latestF[7];
+		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g  SHINE %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8], plane[num_planes][14]);
 	}
 }
 
