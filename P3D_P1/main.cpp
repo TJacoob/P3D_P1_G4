@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////
 //
 // P3D Course
-// (c) 2016 by João Madeiras Pereira
+// (c) 2016 by Joï¿½o Madeiras Pereira
 // TEMPLATE: Whitted Ray Tracing NFF scenes and drawing points with Modern OpenGL
 //
 //You should develop your rayTracing( Ray ray, int depth, float RefrIndex) which returns a color and
@@ -136,7 +136,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	if (intersect)
 	{
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();
-		// recuperar normal que vem de trás
+		// recuperar normal que vem de trï¿½s
 		Vec3 assistantColor;
 
 		for (int h = 0; h <= num_lights; h++)
@@ -145,34 +145,34 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			Vec3 L = (ls.position - hitpoint).normalize();
 			Ray shadowRay = Ray(hitpoint, L);
 			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
-	
-			if ( L.dot(normal) > 0) // Raio a ir para fora do objeto?
+
+			if (L.dot(normal) > 0) // Raio a ir para fora do objeto?
 			{
-				Vec3 shadowColor = rayTracing(shadowRay, depth+1, 1);
-				if (shadowColor.equals(background)) // Não há interseção com nada, é pq está caminho aberto até à luz
+				Vec3 shadowColor = rayTracing(shadowRay, depth + 1, 1);
+				if (shadowColor.equals(background)) // Nï¿½o hï¿½ interseï¿½ï¿½o com nada, ï¿½ pq estï¿½ caminho aberto atï¿½ ï¿½ luz
 				{
-					Vec3 r = (normal*(L.dot(normal))*2 - L).normalize();
+					Vec3 r = (normal*(L.dot(normal)) * 2 - L).normalize();
 
 					assistantColor = assistantColor + (ls.color*Kdif)*(normal.dot(L)) + (ls.color*Ks)*(r.dot(L)) ^ h;//CORRIGIR H!!!!
 				}
-				else // Caminho está obstruído por um objeto, é suposto haver sombra?
+				else // Caminho estï¿½ obstruï¿½do por um objeto, ï¿½ suposto haver sombra?
 				{
 					assistantColor = Vec3(0, 0, 0);
 				}
 			}
-			
+
 			if (depth >= MAX_DEPTH) {
 				printf("depth: %d\n", depth);
 				return c;
 			}
-			
+
 		}
-		
+
 		c = c + assistantColor;
 
-		
 
-		
+
+
 		//IF REFLECIVE
 
 		//IF TRANSLUCID
@@ -277,8 +277,8 @@ void createBufferObjects()
 	glGenBuffers(2, VboId);
 	glBindBuffer(GL_ARRAY_BUFFER, VboId[0]);
 
-	/* Não é necessário fazer glBufferData, ou seja o envio dos pontos para a placa gráfica pois isso
-	é feito na drawPoints em tempo de execução com GL_DYNAMIC_DRAW */
+	/* Nï¿½o ï¿½ necessï¿½rio fazer glBufferData, ou seja o envio dos pontos para a placa grï¿½fica pois isso
+	ï¿½ feito na drawPoints em tempo de execuï¿½ï¿½o com GL_DYNAMIC_DRAW */
 
 	glEnableVertexAttribArray(VERTEX_COORD_ATTRIB);
 	glVertexAttribPointer(VERTEX_COORD_ATTRIB, 2, GL_FLOAT, 0, 0, 0);
@@ -353,21 +353,21 @@ void renderScene()
 			colors[index_col++] = (float)color.y;
 			colors[index_col++] = (float)color.z;
 
-			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
+			if (draw_mode == 0) {  // desenhar o conteï¿½do da janela ponto a ponto
 				drawPoints();
 				index_pos = 0;
 				index_col = 0;
 			}
 		}
 		printf("line %d\n", y);
-		if (draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
+		if (draw_mode == 1) {  // desenhar o conteï¿½do da janela linha a linha
 			drawPoints();
 			index_pos = 0;
 			index_col = 0;
 		}
 	}
 
-	if (draw_mode == 2) //preenchar o conteúdo da janela com uma imagem completa
+	if (draw_mode == 2) //preenchar o conteï¿½do da janela com uma imagem completa
 		drawPoints();
 
 	printf("Terminou!\n");
@@ -570,7 +570,7 @@ void init(int argc, char* argv[])
 }
 
 int main(int argc, char* argv[])
-{	
+{
 	// Test Sphere
 	//s = Sphere(Vec3( 0 , 0 , 0), 1, Vec3(0.078, 1, 0.207));
 
@@ -647,17 +647,17 @@ int main(int argc, char* argv[])
 	//c = Camera(Vec3(2.1, 1.3, 1.7),Vec3(0,0,0),Vec3(0,0,1), (double)45, RES_X, RES_Y);
 	c.print();
 
-	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
+	if (draw_mode == 0) { // desenhar o conteï¿½do da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
 		size_colors = 3 * sizeof(float);
 		printf("DRAWING MODE: POINT BY POINT\n");
 	}
-	else if (draw_mode == 1) { // desenhar o conteúdo da janela linha a linha
+	else if (draw_mode == 1) { // desenhar o conteï¿½do da janela linha a linha
 		size_vertices = 2 * RES_X * sizeof(float);
 		size_colors = 3 * RES_X * sizeof(float);
 		printf("DRAWING MODE: LINE BY LINE\n");
 	}
-	else if (draw_mode == 2) { // preencher o conteúdo da janela com uma imagem completa
+	else if (draw_mode == 2) { // preencher o conteï¿½do da janela com uma imagem completa
 		size_vertices = 2 * RES_X*RES_Y * sizeof(float);
 		size_colors = 3 * RES_X*RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE\n");

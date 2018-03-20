@@ -10,7 +10,7 @@ public:
 	Vec3 origin;		//(x,y,z) point!
 	Vec3 direction;		//(x,y,z) unit vector (normalized)
 
-	// Construtores
+						// Construtores
 	Ray() : origin(Vec3()), direction(Vec3()) {};
 	Ray(Vec3 o, Vec3 d) : origin(o), direction(d) {};
 

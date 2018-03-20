@@ -9,19 +9,19 @@ public:
 	// Construtores
 	Vec3() : x(float(0)), y(float(0)), z(float(0)) {};
 	Vec3(float x, float y, float z) : x(x), y(y), z(z) {};
-	
+
 	// Operadores
 	Vec3 operator + (const Vec3 &v) const { return Vec3(x + v.x, y + v.y, z + v.z); };
 	Vec3 operator - (const Vec3 &v) const { return Vec3(x - v.x, y - v.y, z - v.z); };
 	Vec3 operator * (const float &c) const { return Vec3(x*c, y*c, z*c); };
-	//Vec3 operator * (const Vec3 &v) const { return Vec3(x * v.x, y * v.y, z * v.z); };  // Isto é multiplicação direta de cada elemento do vetor
-	Vec3 operator * (const Vec3 &v) const { return Vec3( (y*v.z) - (z*v.y), -(x*v.z)+(z*v.x) , (x*v.y)-(y*v.x) ); };  // Isto é produto externo, qual deles é que realmente queremos?
-	Vec3 operator ^ (const float &c) const { return Vec3(pow(x,c), pow(y, c), pow(z, c)); };
+	//Vec3 operator * (const Vec3 &v) const { return Vec3(x * v.x, y * v.y, z * v.z); };  // Isto ï¿½ multiplicaï¿½ï¿½o direta de cada elemento do vetor
+	Vec3 operator * (const Vec3 &v) const { return Vec3((y*v.z) - (z*v.y), -(x*v.z) + (z*v.x), (x*v.y) - (y*v.x)); };  // Isto ï¿½ produto externo, qual deles ï¿½ que realmente queremos?
+	Vec3 operator ^ (const float &c) const { return Vec3(pow(x, c), pow(y, c), pow(z, c)); };
 
 	// Methods
-	float module() const { return sqrt( x*x + y*y + z*z ); };
-	Vec3 normalize() const{
-		float module = sqrt( x*x + y*y + z*z );
+	float module() const { return sqrt(x*x + y * y + z * z); };
+	Vec3 normalize() const {
+		float module = sqrt(x*x + y * y + z * z);
 		return Vec3(x / module, y / module, z / module);
 	};
 	float dot(Vec3 v) const {
