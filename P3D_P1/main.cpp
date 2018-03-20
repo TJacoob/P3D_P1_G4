@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <stdio.h>
+#include <math.h>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -31,7 +32,7 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 6
-#define MAX_SPHERES 10
+#define MAX_SPHERES 15000
 #define MAX_PLANES 5
 #define MAX_LIGHTS 5
 
@@ -86,7 +87,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	Vec3 c = background;
 	Vec3 normal;
 	float tempT, shortT;
-	float Kdif, Ks, shine;
+	float Kdif, Ks, shine=0, trans=0, indexRef=0;
 	int fs;
 
 	bool intersect = false;
@@ -104,6 +105,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			Kdif = p.Kdif;
 			Ks = p.Ks;
 			shine = p.Shine;
+			trans = p.Trans;
+			indexRef = p.IndexRef;
 		}
 		else {
 
@@ -128,6 +131,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				Kdif = s.Kdif;
 				Ks = s.Ks;
 				shine = s.Shine;
+				trans = s.Trans;
+				indexRef = s.IndexRef;
 			}
 		}
 
@@ -184,13 +189,41 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 			Vec3 rColor = rayTracing(reflectedRay, depth + 1, 1);
 
-			int nValue = 5;
+			int nValue = shine;
 			Vec3 nColor = Vec3(rColor.x*Ks*pow(angle, nValue), rColor.x*Ks*pow(angle, nValue), rColor.x*Ks*pow(angle, nValue));
 
 			c = c - nColor;
 		};
 
 		//IF TRANSLUCID
+		if (trans > 0)
+		{
+			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
+			Vec3 V = (ray.origin - hitpoint).normalize();		// Raio do hitpoint até ao olho
+
+			Vec3 reflectedDirection = (normal * 2 * normal.dot(V) - V).normalize();
+			Ray reflectedRay = Ray(hitpoint, reflectedDirection);
+
+			float angle = acos((reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module()));
+			float nAngle = asin(indexRef*sin(angle));
+
+			Vec3 vt = normal*(V.dot(normal)) - V;
+			Vec3 t = (vt * (1 / vt.module())).normalize();
+
+			Vec3 invNormal = Vec3(-normal.x, -normal.y, -normal.z);
+			Vec3 refractedDirection = t*sin(nAngle) + (invNormal)*cos(nAngle);
+			Ray refractedRay = Ray(hitpoint, refractedDirection);
+
+			// get color with RayTracing
+			Vec3 rColor = rayTracing(refractedRay, depth + 1, 1);
+
+			// reduce color with transmittance coeficient
+			int nValue = shine;
+			Vec3 nColor = Vec3(rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue));
+			
+			c = c - nColor;
+
+		}
 	};
 
 	return c;
@@ -531,7 +564,7 @@ void setSphere() {
 		sphere[num_spheres][9] = latestF[5];
 		sphere[num_spheres][10] = latestF[6];
 		sphere[num_spheres][11] = latestF[7];
-		printf("SPHERE %d: %g %g %g %g  SHINE %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3], sphere[num_spheres][9]);
+		printf("SPHERE %d: %g %g %g %g  SHINE %g\n TRANS %g", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3], sphere[num_spheres][9], sphere[num_spheres][10]);
 	}
 }
 
@@ -591,8 +624,8 @@ int main(int argc, char* argv[])
 
 	char ch;
 
+	//nff = fopen("balls_high.nff", "r");
 	nff = fopen("input_file_test.nff", "r");
-	//nff = fopen("input_file_test.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
