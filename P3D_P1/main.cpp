@@ -86,7 +86,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	Vec3 c = background;
 	Vec3 normal;
 	float tempT, shortT;
-	float Kdif, Ks, shine=0;
+	float Kdif, Ks, shine;
+	int fs;
 
 	bool intersect = false;
 
@@ -128,16 +129,22 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				Ks = s.Ks;
 				shine = s.Shine;
 			}
-			//Vec3 hitpoint = ray.origin + ray.direction*t;
 		}
 
 	}
 
+	if (depth >= MAX_DEPTH) {
+		//printf("depth: %d\n", depth);
+		return c;
+	}
+
+
 	if (intersect)
 	{
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();
-		// recuperar normal que vem de tr�s
+		// recuperar normal que vem de tras
 		Vec3 assistantColor;
+		
 
 		for (int h = 0; h <= num_lights; h++)
 		{
@@ -153,22 +160,16 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				{
 					Vec3 r = (normal*(L.dot(normal)) * 2 - L).normalize();
 
-					assistantColor = assistantColor + (ls.color*Kdif)*(normal.dot(L)) + (ls.color*Ks)*(r.dot(L)) ^ h;//CORRIGIR H!!!!
+					assistantColor = assistantColor + (ls.color*Kdif)*(normal.dot(L)) + (ls.color*Ks)*pow((r.dot(L)),shine);//CORRIGIR H!!!!
 				}
 				else // Caminho est� obstru�do por um objeto, � suposto haver sombra?
 				{
-					assistantColor = Vec3(0, 0, 0);
+					
 				}
 			}
-
-			if (depth >= MAX_DEPTH) {
-				//printf("depth: %d\n", depth);
-				return c;
-			}
-
 		}
-
-		c = c + assistantColor;
+		
+		c = c * Kdif + assistantColor;
 
 		//IF REFLECIVE
 		if (shine > 0)
@@ -184,7 +185,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			Vec3 rColor = rayTracing(reflectedRay, depth + 1, 1);
 
 			int nValue = 5;
-			Vec3 nColor = Vec3(rColor.x*Ks*pow(angle,nValue), rColor.x*Ks*pow(angle, nValue), rColor.x*Ks*pow(angle, nValue));
+			Vec3 nColor = Vec3(rColor.x*Ks*pow(angle, nValue), rColor.x*Ks*pow(angle, nValue), rColor.x*Ks*pow(angle, nValue));
 
 			c = c - nColor;
 		};
