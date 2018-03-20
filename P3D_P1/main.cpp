@@ -86,7 +86,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	Vec3 c = background;
 	Vec3 normal;
 	float tempT, shortT;
-	float Kdif, Ks, shine;
+	float Kdif, Ks, shine=0;
 
 	bool intersect = false;
 
@@ -162,7 +162,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			}
 
 			if (depth >= MAX_DEPTH) {
-				printf("depth: %d\n", depth);
+				//printf("depth: %d\n", depth);
 				return c;
 			}
 
@@ -170,10 +170,24 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 		c = c + assistantColor;
 
-
-
-
 		//IF REFLECIVE
+		if (shine > 0)
+		{
+			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
+			Vec3 V = (ray.origin - hitpoint).normalize();		// Raio do hitpoint até ao olho
+
+			Vec3 reflectedDirection = (normal * 2 * normal.dot(V) - V).normalize();
+			Ray reflectedRay = Ray(hitpoint, reflectedDirection);
+
+			float angle = (reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module());		 // Já é o coseno
+
+			Vec3 rColor = rayTracing(reflectedRay, depth + 1, 1);
+
+			int nValue = 5;
+			Vec3 nColor = Vec3(rColor.x*Ks*pow(angle,nValue), rColor.x*Ks*pow(angle, nValue), rColor.x*Ks*pow(angle, nValue));
+
+			c = c - nColor;
+		};
 
 		//IF TRANSLUCID
 	};
