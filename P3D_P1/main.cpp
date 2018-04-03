@@ -172,11 +172,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();
 		// recuperar normal que vem de tras
 		Vec3 assistantColor;
+
 		
-		if (depth >= MAX_DEPTH) {
-			//printf("depth: %d\n", depth);
-			return c;
-		}
 
 		for (int h = 0; h <= num_lights; h++)
 		{
@@ -186,28 +183,34 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			Ray shadowRay = Ray(hitpoint, L);
 			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
 
-			if (L.dot(normal) > 0) // Raio a ir para fora do objeto?
-			{
-				Vec3 shadowColor = rayTracing(shadowRay, depth + 1, 1);
-				
+			//printf("ls color %g %g %g \n", )
+
+			if (L.dot(normal) > 0) {
+				//Vec3 shadowColor = rayTracing(shadowRay, depth + 1, 1);
+
 				if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada, ï¿½ pq estï¿½ caminho aberto atï¿½ ï¿½ luz
 				{
-					//Vec3 r = ( normal*(V.dot(normal)) + normal*(V.dot(normal)) - V ).normalize();
-					Vec3 r = (normal*(L.dot(normal)) + normal*(L.dot(normal)) - L).normalize();
+					//Vec3 r = (normal * 2 * (V.dot(normal)) - V).normalize();
+					//Vec3 r = (normal*(L.dot(normal)) + normal*(L.dot(normal)) - L).normalize();
+					Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
 
-					assistantColor = assistantColor + (ls.color*Kdif*(normal.dot(L))) + (ls.color*Ks*pow(r.dot(V),shine));//CORRIGIR H!!!!
+
+					assistantColor = assistantColor + (ls.color*Vec3(Kdif,Kdif,Kdif)*(normal.dot(L))) + (ls.color*Vec3(Ks, Ks, Ks)*pow(r.dot(V), shine));
 				}
 				else // Caminho estï¿½ obstruï¿½do por um objeto, ï¿½ suposto haver sombra?
 				{
 					
 				}
 			}
-		}
+		}		
 
+		c = c * Vec3(Kdif, Kdif, Kdif) + assistantColor;
 		
-		c = c * Kdif + assistantColor;
-
-
+		if (depth >= MAX_DEPTH) {
+			printf("depth: %d\n", depth);
+			return c;
+		}
+	
 		//IF REFLECIVE
 		if (shine > 0)
 		{
@@ -228,31 +231,31 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		};
 
 		//IF TRANSLUCID
-		if (trans > 0){
+		if (trans > 0) {
 			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
 			Vec3 V = (ray.origin - hitpoint).normalize();		// Raio do hitpoint até ao olho
-			
+
 			Vec3 reflectedDirection = (normal * 2 * normal.dot(V) - V).normalize();
 			Ray reflectedRay = Ray(hitpoint, reflectedDirection);
-			
+
 			float angle = acos((reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module()));
 			float nAngle = asin(indexRef*sin(angle));
-			
+
 			Vec3 vt = normal * (V.dot(normal)) - V;
 			Vec3 t = (vt * (1 / vt.module())).normalize();
-			
+
 			Vec3 invNormal = Vec3(-normal.x, -normal.y, -normal.z);
 			Vec3 refractedDirection = t * sin(nAngle) + (invNormal)*cos(nAngle);
 			Ray refractedRay = Ray(hitpoint, refractedDirection);
-			
+
 			// get color with RayTracing
 			Vec3 rColor = rayTracing(refractedRay, depth + 1, 1);
-			
+
 			// reduce color with transmittance coeficient
 			int nValue = shine;
 			Vec3 nColor = Vec3(rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue));
 			c = c - nColor;
-			}
+		}
 	};
 
 	return c;
