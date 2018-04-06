@@ -87,20 +87,23 @@ bool rayIntersect(Ray ray) {
 	//PLANE INTERSECTION CYCLE
 	for (int j = 0; j <= num_planes; j++) {
 		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
-
+		printf("testando planos\n");
 		planeIntersect = p.intersect(ray);
 		if (planeIntersect != 0) {
+			printf("INTERSECTEI UM PLANOOOO\n");
 			return true;
+			
 		}
 	}
 
 	//SPHERE INTERSECTION CYCLE
 	for (int i = 0; i <= num_spheres; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
-
+		printf("testando esferas\n");
 		sphereIntersect = s.intersect(ray);
 
 		if (sphereIntersect != 0) {
+			printf("INTERSECTEI UMA ESFERAAAAA\n");
 			return true;
 		}
 	}
@@ -156,7 +159,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			if (tempT < shortT) {
 				shortT = tempT;
 				c = s.color;
-				normal = s.getNormal(ray, tempT);
+				normal = s.getNormal(ray, shortT);
 				Kdif = s.Kdif;
 				Ks = s.Ks;
 				shine = s.Shine;
@@ -170,48 +173,52 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	if (intersect)
 	{
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();
-		Vec3 assistantColor;
-
+		// recuperar normal que vem de tras
+		Vec3 color;
+		//color = c * Kdif;
+		
+		
 		for (int h = 0; h < num_lights; h++)
 		{
+			
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
-			ls.print();
-
-			// Normal vem de cima, já normalizada
-			Vec3 L = (ls.position - hitpoint).normalize(); // Light Direction: Hitpoint -> Luz
-			//Vec3 V = Vec3(-ray.direction.x, -ray.direction.y, -ray.direction.z);  // Viewing Direction: Hitpoint -> Olho
-			Vec3 V = (ray.origin - hitpoint).normalize();
-			Vec3 R = (normal* (L.dot(normal)))*2 - L; 
+			Vec3 L = (ls.position - hitpoint).normalize();
+			Vec3 V = (ray.direction).normalize()*(-1);
 			Vec3 H = (L + V).normalize();
-		
-			Ray shadowRayC = Ray(hitpoint, L);  
-			Ray shadowRay = Ray(shadowRayC.getPoint(0.001), L); // Resolve o self-shadowing
+			Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
 
-			float facingRatio = normal.dot(R);
+			Ray shadowRayC = Ray(hitpoint, ls.position - hitpoint);
+			Ray shadowRay = Ray(shadowRayC.getPoint(0.001), (ls.position - hitpoint));
 
-			if (facingRatio > 0)  // Para fora da esfera, =1 é mesmo de frente
-			{
+			//normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
 
-				if (rayIntersect(shadowRay))		// Está a ver se intersecta algum objeto
-				{
-					// acontece alguma coisa, o que?
+			if (normal.dot(L) > 0) {
+
+				if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
+				{	
+					color = color + (ls.color*Kdif*(normal.dot(L))) + (ls.color*Ks*pow(normal.dot(H), shine));
 				}
-				else // Atingir a luz
+				else // Caminho obstruido por um objeto, suposto haver sombra?
 				{
-					assistantColor = assistantColor + (ls.color*Kdif)*(normal.dot(L)) + (ls.color*Ks)*(pow(normal.dot(H), shine));
+					
 				}
 			}
 			
-		}		
+		}	
 
-		c = c * Kdif + assistantColor;  // É suposto ser produto externo? Não está 
+		c = c * Kdif + color;
+
 		
+
+		//printf("%g %g %g \n\n ", assistantColor.x, assistantColor.y, assistantColor.z);
+
 		if (depth >= MAX_DEPTH) {
 			printf("depth: %d\n", depth);
 			return c;
 		}
-	
+		
 		/*
+		
 		//IF REFLECIVE
 		if (shine > 0)
 		{
@@ -256,8 +263,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			int nValue = shine;
 			Vec3 nColor = Vec3(rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue));
 			c = c - nColor;
-		}
-		*/
+		}*/
 	};
 
 	return c;
