@@ -117,7 +117,7 @@ bool rayIntersect(Ray ray) {
 
 Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 {
-	Vec3 c;
+	Vec3 c = background;
 	Vec3 normal;
 	float tempT, shortT;
 	float Kdif=0, Ks=0, shine = 0, trans = 0, indexRef = 0;
@@ -191,7 +191,6 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
 
-			ls.print();
 			Vec3 L = (ls.position - hitpoint).normalize();    // Raio da luz para o hitpoint
 			Vec3 V = (ray.direction).normalize()*(-1);
 			Vec3 H = (L + V).normalize();
@@ -239,27 +238,27 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			return c;
 		}
 		
-		/*
+		
 		//IF REFLECIVE
 		if (shine > 0)
 		{
-			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
-			Vec3 V = (ray.origin - hitpoint).normalize();		// Raio do hitpoint até ao olho
+			Vec3 V = (ray.direction).normalize()*(-1);
 
-			Vec3 reflectedDirection = (normal * 2 * normal.dot(V) - V).normalize();
-			Ray reflectedRay = Ray(hitpoint, reflectedDirection);
+			Vec3 reflectedDirection = (normal * 2 * normal.dot(V) - V);
+			Ray reflectedRayC = Ray(hitpoint, reflectedDirection);
+			Ray reflectedRay = Ray(reflectedRayC.getPoint(0.25), reflectedDirection);  //Self-shadowing?
 
-			float angle = (reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module());		 // Já é o coseno
+			//float angle = (reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module());		 // Já é o coseno
 
 			Vec3 rColor = rayTracing(reflectedRay, depth + 1, 1);
 
-			int nValue = 5;
-			Vec3 nColor = Vec3(rColor.x*Ks*pow(angle, nValue), rColor.x*Ks*pow(angle, nValue), rColor.x*Ks*pow(angle, nValue));
+			//Vec3 nColor = Vec3(rColor.x*Ks*pow(angle, shine), rColor.y*Ks*pow(angle, shine), rColor.z*Ks*pow(angle, shine));
 
-			c = c - nColor;
+			printf("Ks: %f", Ks);
+			c = c + rColor*Ks;
 		};
 
-		*/
+		
 		/*
 		//IF TRANSLUCID
 		if (trans > 0) {
@@ -689,7 +688,7 @@ int main(int argc, char* argv[])
 
 	char ch;
 
-	nff = fopen("balls_high.nff", "r");
+	nff = fopen("balls_medium.nff", "r");
 	//nff = fopen("input_file_test.nff", "r");
 	if (nff == NULL) {
 		return 0;
