@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <stdio.h>
+#include <algorithm>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -87,7 +88,7 @@ bool rayIntersect(Ray ray) {
 	//PLANE INTERSECTION CYCLE
 	for (int j = 0; j <= num_planes; j++) {
 		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
-		printf("testando planos\n");
+		//printf("testando planos\n");
 		planeIntersect = p.intersect(ray);
 		if (planeIntersect != 0) {
 			printf("INTERSECTEI UM PLANOOOO\n");
@@ -99,7 +100,7 @@ bool rayIntersect(Ray ray) {
 	//SPHERE INTERSECTION CYCLE
 	for (int i = 0; i <= num_spheres; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
-		printf("testando esferas\n");
+		//printf("testando esferas\n");
 		sphereIntersect = s.intersect(ray);
 
 		if (sphereIntersect != 0) {
@@ -122,6 +123,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	float Kdif, Ks, shine = 0, trans = 0, indexRef = 0;
 	int fs;
 
+	int tipoIntersect;
+
 	bool intersect = false;
 
 	//PLANE INTERSECTION CYCLE
@@ -139,6 +142,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			shine = p.Shine;
 			trans = p.Trans;
 			indexRef = p.IndexRef;
+			tipoIntersect = 0;
 		}
 		else {
 
@@ -165,6 +169,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				shine = s.Shine;
 				trans = s.Trans;
 				indexRef = s.IndexRef;
+				tipoIntersect = 1;
 			}
 		}
 
@@ -172,41 +177,57 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	if (intersect)
 	{
-		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();
-		// recuperar normal que vem de tras
-		Vec3 color;
-		//color = c * Kdif;
+		printf("TIPO INTERSECT: %d\n", tipoIntersect);
+		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();		// Falta voltar a resolver o self-shadowing
 		
+		// Cor começa em preto e vamos adicionando a cor de cada objecto
+		// A primeira cor a somar é a do material que intersectou
+		// Depois enviamos raios para cada luz, se não houver intereseção com essa luz, então fica apenas assim
+		// Se houver caminho aberto para cada luz, então somamos a contribuição de cada luz
+		Vec3 LightsContribution = Vec3(0, 0, 0);
 		
 		for (int h = 0; h < num_lights; h++)
 		{
 			
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
-			Vec3 L = (ls.position - hitpoint).normalize();
+			Vec3 L = (ls.position - hitpoint).normalize();    // Raio da luz para o hitpoint
 			Vec3 V = (ray.direction).normalize()*(-1);
-			Vec3 H = (L + V).normalize();
+			Vec3 H = (L + V);
 			Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
 
-			Ray shadowRayC = Ray(hitpoint, ls.position - hitpoint);
-			Ray shadowRay = Ray(shadowRayC.getPoint(0.001), (ls.position - hitpoint));
+			Ray shadowRayC = Ray(hitpoint, L);
+			Ray shadowRay = Ray(shadowRayC.getPoint(0.1), L);
 
 			//normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
 
+			ls.print();
+			printf("NORMAL %f %f %f\n", normal.x, normal.y, normal.z );
+			printf("Hitpoint: %f %f %f\n", hitpoint.x, hitpoint.y, hitpoint.z);
+			printf("L %f %f %f\n", L.x, L.y, L.z);
+			printf("BEFORE DIFUSE AND SPECULAR\n");
 			if (normal.dot(L) > 0) {
-
+				printf("AFTER NORMAL DOT L\n");
 				if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
 				{	
-					color = color + (ls.color*Kdif*(normal.dot(L))) + (ls.color*Ks*pow(normal.dot(H), shine));
+					Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
+					//Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
+					
+					printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
+					//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
+
+					LightsContribution = LightsContribution + difuse; // + specular;
 				}
 				else // Caminho obstruido por um objeto, suposto haver sombra?
 				{
-					
+					printf("Caminho obstruído\n");
 				}
 			}
 			
 		}	
 
-		c = c * Kdif + color;
+		printf("COR DO MATERIAL");
+
+		c = c * Kdif + LightsContribution;
 
 		
 
