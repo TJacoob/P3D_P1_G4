@@ -91,7 +91,7 @@ bool rayIntersect(Ray ray) {
 		//printf("testando planos\n");
 		planeIntersect = p.intersect(ray);
 		if (planeIntersect != 0) {
-			printf("INTERSECTEI UM PLANOOOO\n");
+			//printf("INTERSECTEI UM PLANOOOO\n");
 			return true;
 			
 		}
@@ -104,7 +104,7 @@ bool rayIntersect(Ray ray) {
 		sphereIntersect = s.intersect(ray);
 
 		if (sphereIntersect != 0) {
-			printf("INTERSECTEI UMA ESFERAAAAA\n");
+			//printf("INTERSECTEI UMA ESFERAAAAA\n");
 			return true;
 		}
 	}
@@ -177,7 +177,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	if (intersect)
 	{
-		printf("TIPO INTERSECT: %d\n", tipoIntersect);
+		//printf("TIPO INTERSECT: %d\n", tipoIntersect);
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();		// Falta voltar a resolver o self-shadowing
 		
 		// Cor começa em preto e vamos adicionando a cor de cada objecto
@@ -206,30 +206,30 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 					Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
 					Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
 					
-					printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
+					//printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
 					//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
 
 					LightsContribution = LightsContribution + difuse + specular;
 				}
 				else // Caminho obstruido por um objeto, suposto haver sombra?
 				{
-					printf("Caminho obstruído\n");
+					//printf("Caminho obstruído\n");
 				}
 			}
 			
-			printf("------------\n");
-			printf("KDif: %f\n", Kdif);
-			printf("Cor Luz: %f %f %f\n", ls.color.x, ls.color.y, ls.color.z);
-			printf("Contribuição Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
-			printf("Cor Anterior: %f %f %f\n", c.x, c.y, c.z);
+			//printf("------------\n");
+			//printf("KDif: %f\n", Kdif);
+			//printf("Cor Luz: %f %f %f\n", ls.color.x, ls.color.y, ls.color.z);
+			//printf("Contribuição Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
+			//printf("Cor Anterior: %f %f %f\n", c.x, c.y, c.z);
 		}	
 
 
 		//printf("COR DO MATERIAL");
 
-		c = (c * Kdif + LightsContribution);
+		c = (c * Kdif + (LightsContribution/num_lights));
 
-		printf("Cor Final: %f %f %f\n", c.x, c.y, c.z);
+		//printf("Cor Final: %f %f %f\n", c.x, c.y, c.z);
 		
 
 		//printf("%g %g %g \n\n ", assistantColor.x, assistantColor.y, assistantColor.z);
@@ -240,7 +240,6 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		}
 		
 		/*
-		
 		//IF REFLECIVE
 		if (shine > 0)
 		{
@@ -260,6 +259,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			c = c - nColor;
 		};
 
+		*/
+		/*
 		//IF TRANSLUCID
 		if (trans > 0) {
 			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
@@ -688,7 +689,7 @@ int main(int argc, char* argv[])
 
 	char ch;
 
-	nff = fopen("input_file_test.nff", "r");
+	nff = fopen("balls_high.nff", "r");
 	//nff = fopen("input_file_test.nff", "r");
 	if (nff == NULL) {
 		return 0;
