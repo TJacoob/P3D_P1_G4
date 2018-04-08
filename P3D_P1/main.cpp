@@ -117,13 +117,13 @@ bool rayIntersect(Ray ray) {
 
 Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 {
-	Vec3 c = background;
+	Vec3 c;
 	Vec3 normal;
 	float tempT, shortT;
-	float Kdif, Ks, shine = 0, trans = 0, indexRef = 0;
+	float Kdif=0, Ks=0, shine = 0, trans = 0, indexRef = 0;
 	int fs;
 
-	int tipoIntersect;
+	int tipoIntersect=0;
 
 	bool intersect = false;
 
@@ -190,32 +190,26 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		{
 			
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
+
+			ls.print();
 			Vec3 L = (ls.position - hitpoint).normalize();    // Raio da luz para o hitpoint
 			Vec3 V = (ray.direction).normalize()*(-1);
-			Vec3 H = (L + V);
+			Vec3 H = (L + V).normalize();
 			Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
 
 			Ray shadowRayC = Ray(hitpoint, L);
-			Ray shadowRay = Ray(shadowRayC.getPoint(0.1), L);
+			Ray shadowRay = Ray(shadowRayC.getPoint(0.25), L);
 
-			//normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
-
-			ls.print();
-			printf("NORMAL %f %f %f\n", normal.x, normal.y, normal.z );
-			printf("Hitpoint: %f %f %f\n", hitpoint.x, hitpoint.y, hitpoint.z);
-			printf("L %f %f %f\n", L.x, L.y, L.z);
-			printf("BEFORE DIFUSE AND SPECULAR\n");
 			if (normal.dot(L) > 0) {
-				printf("AFTER NORMAL DOT L\n");
 				if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
 				{	
 					Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
-					//Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
+					Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
 					
 					printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
 					//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
 
-					LightsContribution = LightsContribution + difuse; // + specular;
+					LightsContribution = LightsContribution + difuse + specular;
 				}
 				else // Caminho obstruido por um objeto, suposto haver sombra?
 				{
@@ -223,12 +217,19 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				}
 			}
 			
+			printf("------------\n");
+			printf("KDif: %f\n", Kdif);
+			printf("Cor Luz: %f %f %f\n", ls.color.x, ls.color.y, ls.color.z);
+			printf("Contribuição Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
+			printf("Cor Anterior: %f %f %f\n", c.x, c.y, c.z);
 		}	
 
-		printf("COR DO MATERIAL");
 
-		c = c * Kdif + LightsContribution;
+		//printf("COR DO MATERIAL");
 
+		c = (c * Kdif + LightsContribution);
+
+		printf("Cor Final: %f %f %f\n", c.x, c.y, c.z);
 		
 
 		//printf("%g %g %g \n\n ", assistantColor.x, assistantColor.y, assistantColor.z);
@@ -284,7 +285,9 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			int nValue = shine;
 			Vec3 nColor = Vec3(rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue));
 			c = c - nColor;
-		}*/
+		}
+
+		*/
 	};
 
 	return c;

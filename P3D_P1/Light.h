@@ -14,6 +14,7 @@ public:
 
 	void print() {
 		printf("Light AT (%f, %f, %f)\n", position.x, position.y, position.z);
+		printf("Color (%f, %f, %f)\n", color.x, color.y, color.z);
 		//printf("WITH DIRECTION (%f, %f, %f)\n", direction.x, direction.y, direction.z);
 		printf("---------------------------\n");
 	}
