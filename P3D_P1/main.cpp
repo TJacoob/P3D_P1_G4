@@ -38,7 +38,7 @@
 #define MAX_TRIANGLES 10000
 #define MAX_LIGHTS 5
 
-#define BIAS 0.25
+#define BIAS 0.01
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -74,7 +74,7 @@ float plane[MAX_PLANES][17];
 int num_planes = 0;
 
 // TRIANGLES Array
-float triangle[MAX_TRIANGLES][9];
+float triangle[MAX_TRIANGLES][17];
 int num_triangles = 0;
 
 // Lights Array
@@ -91,7 +91,7 @@ int WindowHandle = 0;
 
 bool rayIntersect(Ray ray) {
 
-	float planeIntersect, sphereIntersect;
+	float planeIntersect, sphereIntersect, triangleIntersect;
 
 	//PLANE INTERSECTION CYCLE
 	for (int j = 0; j <= num_planes; j++) {
@@ -117,6 +117,19 @@ bool rayIntersect(Ray ray) {
 		}
 	}
 
+	//TRIANGLE INTERSECTION CYCLE
+	for (int k = 0; k <= num_triangles; k++) {
+		Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
+
+		triangleIntersect = t.intersect(ray);
+		//printf("Triangle T: %f \n", triangleIntersect);
+
+		if (triangleIntersect != 0) {
+			//printf("INTERSECTEI UM TRIANGULO\n");
+			return true;
+		}
+	}
+
 	return false;
 }
 
@@ -127,7 +140,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Vec3 c = background;
 	Vec3 normal;
-	float tempT, shortT;
+	float tempT=0, altT=0, shortT=1000;
 	float Kdif = 0, Ks = 0, shine = 0, trans = 0, indexRef = 0;
 	int fs;
 
@@ -136,7 +149,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	bool intersect = false;
 
 	//PLANE INTERSECTION CYCLE
-	for (int j = 0; j <= num_planes; j++) {
+	for (int j = 0; j < num_planes; j++) {
 		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
 
 		shortT = p.intersect(ray);
@@ -156,36 +169,60 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 		}
 	}
-	
+
+	//SPHERE INTERSECTION CYCLE
+	if (num_spheres != 0)
+	{
+		for (int i = 0; i <= num_spheres; i++) {
+			Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
+
+			tempT = s.intersect(ray);
+
+			if (tempT == 0) {
+
+			}
+			else {
+				intersect = true;
+				if (tempT < shortT) {
+					shortT = tempT;
+					c = s.color;
+					normal = s.getNormal(ray, shortT);
+					Kdif = s.Kdif;
+					Ks = s.Ks;
+					shine = s.Shine;
+					trans = s.Trans;
+					indexRef = s.IndexRef;
+					tipoIntersect = 1;
+				}
+			}
+		}
+	}
+
 	//TRIANGLE INTERSECTION CYCLE
 	for (int k = 0; k <= num_triangles; k++) {
 		//printf("TRIANGLE %d p1 %g %g %g p2 %g %g %g p3 %g %g %g\n\n", k, triangle[k][0], triangle[k][1], triangle[k][2], triangle[k][3], triangle[k][4], triangle[k][5], triangle[k][6], triangle[k][7], triangle[k][8]);
-	}
+		Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
 
-	//SPHERE INTERSECTION CYCLE
-	for (int i = 0; i <= num_spheres; i++) {
-		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
+		altT = t.intersect(ray);
 
-		tempT = s.intersect(ray);
-
-		if (tempT == 0) {
+		if (altT == 0) {
 
 		}
-		else {
+		else
+		{
 			intersect = true;
-			if (tempT < shortT) {
+			if (altT < shortT) {
 				shortT = tempT;
-				c = s.color;
-				normal = s.getNormal(ray, shortT);
-				Kdif = s.Kdif;
-				Ks = s.Ks;
-				shine = s.Shine;
-				trans = s.Trans;
-				indexRef = s.IndexRef;
-				tipoIntersect = 1;
+				c = t.color;
+				normal = t.getNormal();
+				Kdif = t.Kdif;
+				Ks = t.Ks;
+				shine = t.Shine;
+				trans = t.Trans;
+				indexRef = t.IndexRef;
+				tipoIntersect = 2;
 			}
 		}
-
 	}
 
 	if (intersect)
@@ -658,7 +695,16 @@ void setPlane() {
 	if (fscanf(nff, " 3 %g %g %g", &triangle[num_triangles][0], &triangle[num_triangles][1], &triangle[num_triangles][2]) != 0) {
 		fscanf(nff, "%g %g %g", &triangle[num_triangles][3], &triangle[num_triangles][4], &triangle[num_triangles][5]);
 		fscanf(nff, "%g %g %g", &triangle[num_triangles][6], &triangle[num_triangles][7], &triangle[num_triangles][8]);
+		triangle[num_triangles][9] = latestF[0];
+		triangle[num_triangles][10] = latestF[1];
+		triangle[num_triangles][11] = latestF[2];
+		triangle[num_triangles][12] = latestF[3];
+		triangle[num_triangles][13] = latestF[4];
+		triangle[num_triangles][14] = latestF[5];
+		triangle[num_triangles][15] = latestF[6];
+		triangle[num_triangles][16] = latestF[7];
 		printf("FOUND TRIANGLE NUMBER - %d\n", num_triangles);
+
 	}
 
 	while (num_planes < MAX_PLANES) {
@@ -717,9 +763,9 @@ int main(int argc, char* argv[])
 
 	char ch;
 
-	//nff = fopen("mount_low.nff", "r");
-	//nff = fopen("balls_medium.nff", "r");
 	nff = fopen("mount_low.nff", "r");
+	//nff = fopen("balls_medium.nff", "r");
+	//nff = fopen("mount_medium.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
