@@ -140,7 +140,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 {
 	Vec3 c = background;
 	Vec3 normal;
-	float tempT=0, altT=0, shortT=1000;
+	float tempT = 0, altT = 0, shortT = 1000;
 	float Kdif = 0, Ks = 0, shine = 0, trans = 0, indexRef = 0;
 	int fs;
 
@@ -149,24 +149,27 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	bool intersect = false;
 
 	//PLANE INTERSECTION CYCLE
-	for (int j = 0; j < num_planes; j++) {
-		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
+	if (num_planes != 0)
+	{
+		for (int j = 0; j <= num_planes; j++) {
+			Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
 
-		shortT = p.intersect(ray);
+			shortT = p.intersect(ray);
 
-		if (shortT != 0) {
-			intersect = true;
-			c = p.color;
-			normal = p.getNormal();
-			Kdif = p.Kdif;
-			Ks = p.Ks;
-			shine = p.Shine;
-			trans = p.Trans;
-			indexRef = p.IndexRef;
-			tipoIntersect = 0;
-		}
-		else {
+			if (shortT != 0) {
+				intersect = true;
+				c = p.color;
+				normal = p.getNormal();
+				Kdif = p.Kdif;
+				Ks = p.Ks;
+				shine = p.Shine;
+				trans = p.Trans;
+				indexRef = p.IndexRef;
+				tipoIntersect = 0;
+			}
+			else {
 
+			}
 		}
 	}
 
@@ -199,28 +202,31 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	}
 
 	//TRIANGLE INTERSECTION CYCLE
-	for (int k = 0; k <= num_triangles; k++) {
-		//printf("TRIANGLE %d p1 %g %g %g p2 %g %g %g p3 %g %g %g\n\n", k, triangle[k][0], triangle[k][1], triangle[k][2], triangle[k][3], triangle[k][4], triangle[k][5], triangle[k][6], triangle[k][7], triangle[k][8]);
-		Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
+	if (num_triangles != 0)
+	{
+		for (int k = 0; k <= num_triangles; k++) {
+			//printf("TRIANGLE %d p1 %g %g %g p2 %g %g %g p3 %g %g %g\n\n", k, triangle[k][0], triangle[k][1], triangle[k][2], triangle[k][3], triangle[k][4], triangle[k][5], triangle[k][6], triangle[k][7], triangle[k][8]);
+			Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
 
-		altT = t.intersect(ray);
+			altT = t.intersect(ray);
 
-		if (altT == 0) {
+			if (altT == 0) {
 
-		}
-		else
-		{
-			intersect = true;
-			if (altT < shortT) {
-				shortT = tempT;
-				c = t.color;
-				normal = t.getNormal();
-				Kdif = t.Kdif;
-				Ks = t.Ks;
-				shine = t.Shine;
-				trans = t.Trans;
-				indexRef = t.IndexRef;
-				tipoIntersect = 2;
+			}
+			else
+			{
+				intersect = true;
+				if (altT < shortT) {
+					shortT = tempT;
+					c = t.color;
+					normal = t.getNormal();
+					Kdif = t.Kdif;
+					Ks = t.Ks;
+					shine = t.Shine;
+					trans = t.Trans;
+					indexRef = t.IndexRef;
+					tipoIntersect = 2;
+				}
 			}
 		}
 	}
@@ -709,9 +715,9 @@ void setPlane() {
 
 	while (num_planes < MAX_PLANES) {
 		if (plane[num_planes][0] == NULL) {
+			num_planes++;
 			break;
 		}
-		num_planes++;
 	}
 
 	if (fscanf(nff, "l %g %g %g %g %g %g %g %g %g", &plane[num_planes][0], &plane[num_planes][1], &plane[num_planes][2], &plane[num_planes][3], &plane[num_planes][4], &plane[num_planes][5], &plane[num_planes][6], &plane[num_planes][7], &plane[num_planes][8]) != 0) {
@@ -763,8 +769,8 @@ int main(int argc, char* argv[])
 
 	char ch;
 
-	nff = fopen("mount_low.nff", "r");
-	//nff = fopen("balls_medium.nff", "r");
+	//nff = fopen("mount_low.nff", "r");
+	nff = fopen("balls_medium.nff", "r");
 	//nff = fopen("mount_medium.nff", "r");
 	if (nff == NULL) {
 		return 0;
