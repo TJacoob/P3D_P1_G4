@@ -15,6 +15,7 @@
 #include <string>
 #include <stdio.h>
 #include <algorithm>
+#include <time.h>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -151,7 +152,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	//PLANE INTERSECTION CYCLE
 	if (num_planes != 0)
 	{
-		for (int j = 0; j <= num_planes; j++) {
+		for (int j = 0; j < num_planes; j++) {
 			Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
 
 			shortT = p.intersect(ray);
@@ -176,7 +177,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	//SPHERE INTERSECTION CYCLE
 	if (num_spheres != 0)
 	{
-		for (int i = 0; i <= num_spheres; i++) {
+		for (int i = 0; i < num_spheres; i++) {
 			Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
 
 			tempT = s.intersect(ray);
@@ -204,7 +205,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	//TRIANGLE INTERSECTION CYCLE
 	if (num_triangles != 0)
 	{
-		for (int k = 0; k <= num_triangles; k++) {
+		for (int k = 0; k < num_triangles; k++) {
 			//printf("TRIANGLE %d p1 %g %g %g p2 %g %g %g p3 %g %g %g\n\n", k, triangle[k][0], triangle[k][1], triangle[k][2], triangle[k][3], triangle[k][4], triangle[k][5], triangle[k][6], triangle[k][7], triangle[k][8]);
 			Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
 
@@ -505,6 +506,8 @@ void drawPoints()
 
 void renderScene()
 {
+	clock_t begin = clock();
+
 	int index_pos = 0;
 	int index_col = 0;
 
@@ -529,7 +532,7 @@ void renderScene()
 				index_col = 0;
 			}
 		}
-		printf("line %d\n", y);
+		//printf("line %d\n", y);
 		if (draw_mode == 1) {  // desenhar o conte�do da janela linha a linha
 			drawPoints();
 			index_pos = 0;
@@ -541,6 +544,10 @@ void renderScene()
 		drawPoints();
 
 	printf("Terminou!\n");
+
+	clock_t end = clock();
+	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	printf("Tempo de execucao: %lf s\n", time_spent);
 }
 
 void cleanup()
@@ -670,13 +677,7 @@ void setResolution() {
 
 void setSphere() {
 
-	while (num_spheres < MAX_SPHERES) {
-		if (sphere[num_spheres][0] == NULL && sphere[num_spheres][1] == NULL && sphere[num_spheres][2] == NULL && sphere[num_spheres][3] == NULL && sphere[num_spheres][4] == NULL && sphere[num_spheres][5] == NULL && sphere[num_spheres][6] == NULL) {
-			break;
-		}
-		num_spheres++;
-	}
-
+	printf("NUM ESFERAS: %d\n", num_spheres);
 	if (fscanf(nff, "%g %g %g %g", &sphere[num_spheres][0], &sphere[num_spheres][1], &sphere[num_spheres][2], &sphere[num_spheres][3]) != 0) {
 		sphere[num_spheres][4] = latestF[0];
 		sphere[num_spheres][5] = latestF[1];
@@ -687,16 +688,12 @@ void setSphere() {
 		sphere[num_spheres][10] = latestF[6];
 		sphere[num_spheres][11] = latestF[7];
 		printf("SPHERE %d: %g %g %g %g  SHINE %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3], sphere[num_spheres][9]);
+		num_spheres++;
+
 	}
 }
 
 void setPlane() {
-	while (num_triangles < MAX_TRIANGLES) {
-		if (triangle[num_triangles][0] == NULL && triangle[num_triangles][1] == NULL && triangle[num_triangles][2] == NULL && triangle[num_triangles][3] == NULL, triangle[num_triangles][4] == NULL && triangle[num_triangles][5] == NULL && triangle[num_triangles][6] == NULL && triangle[num_triangles][7] == NULL && triangle[num_triangles][8] == NULL) {
-			break;
-		}
-		num_triangles++;
-	}
 
 	if (fscanf(nff, " 3 %g %g %g", &triangle[num_triangles][0], &triangle[num_triangles][1], &triangle[num_triangles][2]) != 0) {
 		fscanf(nff, "%g %g %g", &triangle[num_triangles][3], &triangle[num_triangles][4], &triangle[num_triangles][5]);
@@ -710,14 +707,7 @@ void setPlane() {
 		triangle[num_triangles][15] = latestF[6];
 		triangle[num_triangles][16] = latestF[7];
 		printf("FOUND TRIANGLE NUMBER - %d\n", num_triangles);
-
-	}
-
-	while (num_planes < MAX_PLANES) {
-		if (plane[num_planes][0] == NULL) {
-			num_planes++;
-			break;
-		}
+		num_triangles++;
 	}
 
 	if (fscanf(nff, "l %g %g %g %g %g %g %g %g %g", &plane[num_planes][0], &plane[num_planes][1], &plane[num_planes][2], &plane[num_planes][3], &plane[num_planes][4], &plane[num_planes][5], &plane[num_planes][6], &plane[num_planes][7], &plane[num_planes][8]) != 0) {
@@ -730,6 +720,7 @@ void setPlane() {
 		plane[num_planes][15] = latestF[6];
 		plane[num_planes][16] = latestF[7];
 		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g  SHINE %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8], plane[num_planes][14]);
+		num_planes++;
 	}	
 	
 }
@@ -764,8 +755,8 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	// Test Sphere
-	//s = Sphere(Vec3( 0 , 0 , 0), 1, Vec3(0.078, 1, 0.207));
+
+	
 
 	char ch;
 
@@ -870,6 +861,7 @@ int main(int argc, char* argv[])
 
 	init(argc, argv);
 	glutMainLoop();
+
 	exit(EXIT_SUCCESS);
 }
 ///////////////////////////////////////////////////////////////////////
