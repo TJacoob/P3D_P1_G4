@@ -35,6 +35,7 @@
 #define MAX_DEPTH 6
 #define MAX_SPHERES 15000
 #define MAX_PLANES 5
+#define MAX_TRIANGLES 10000
 #define MAX_LIGHTS 5
 
 #define BIAS 0.25
@@ -72,6 +73,10 @@ int num_spheres = 0;
 float plane[MAX_PLANES][17];
 int num_planes = 0;
 
+// TRIANGLES Array
+float triangle[MAX_TRIANGLES][9];
+int num_triangles = 0;
+
 // Lights Array
 float light[MAX_LIGHTS][6];	// X Y Z R G B
 int num_lights = 0;
@@ -96,7 +101,7 @@ bool rayIntersect(Ray ray) {
 		if (planeIntersect != 0) {
 			//printf("INTERSECTEI UM PLANOOOO\n");
 			return true;
-			
+
 		}
 	}
 
@@ -123,10 +128,10 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	Vec3 c = background;
 	Vec3 normal;
 	float tempT, shortT;
-	float Kdif=0, Ks=0, shine = 0, trans = 0, indexRef = 0;
+	float Kdif = 0, Ks = 0, shine = 0, trans = 0, indexRef = 0;
 	int fs;
 
-	int tipoIntersect=0;
+	int tipoIntersect = 0;
 
 	bool intersect = false;
 
@@ -150,6 +155,11 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		else {
 
 		}
+	}
+	
+	//TRIANGLE INTERSECTION CYCLE
+	for (int k = 0; k <= num_triangles; k++) {
+		//printf("TRIANGLE %d p1 %g %g %g p2 %g %g %g p3 %g %g %g\n\n", k, triangle[k][0], triangle[k][1], triangle[k][2], triangle[k][3], triangle[k][4], triangle[k][5], triangle[k][6], triangle[k][7], triangle[k][8]);
 	}
 
 	//SPHERE INTERSECTION CYCLE
@@ -182,16 +192,16 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	{
 		//printf("TIPO INTERSECT: %d\n", tipoIntersect);
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();		// Falta voltar a resolver o self-shadowing
-		
-		// Cor come�a em preto e vamos adicionando a cor de cada objecto
-		// A primeira cor a somar � a do material que intersectou
-		// Depois enviamos raios para cada luz, se n�o houver interese��o com essa luz, ent�o fica apenas assim
-		// Se houver caminho aberto para cada luz, ent�o somamos a contribui��o de cada luz
+
+																				// Cor come�a em preto e vamos adicionando a cor de cada objecto
+																				// A primeira cor a somar � a do material que intersectou
+																				// Depois enviamos raios para cada luz, se n�o houver interese��o com essa luz, ent�o fica apenas assim
+																				// Se houver caminho aberto para cada luz, ent�o somamos a contribui��o de cada luz
 		Vec3 LightsContribution = Vec3(0, 0, 0);
-		
+
 		for (int h = 0; h < num_lights; h++)
 		{
-			
+
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
 
 			Vec3 L = (ls.position - hitpoint).normalize();    // Raio da luz para o hitpoint
@@ -204,10 +214,10 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 			if (normal.dot(L) > 0) {
 				if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
-				{	
+				{
 					Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
 					Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
-					
+
 					//printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
 					//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
 
@@ -218,21 +228,21 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 					//printf("Caminho obstru�do\n");
 				}
 			}
-			
+
 			//printf("------------\n");
 			//printf("KDif: %f\n", Kdif);
 			//printf("Cor Luz: %f %f %f\n", ls.color.x, ls.color.y, ls.color.z);
 			//printf("Contribui��o Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
 			//printf("Cor Anterior: %f %f %f\n", c.x, c.y, c.z);
-		}	
+		}
 
 
 		//printf("COR DO MATERIAL");
 
-		c = (c * Kdif + (LightsContribution/num_lights));
+		c = (c * Kdif + (LightsContribution / num_lights));
 
 		//printf("Cor Final: %f %f %f\n", c.x, c.y, c.z);
-		
+
 
 		//printf("%g %g %g \n\n ", assistantColor.x, assistantColor.y, assistantColor.z);
 
@@ -240,8 +250,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			printf("depth: %d\n", depth);
 			return c;
 		}
-		
-		
+
+
 		//IF REFLECIVE
 		if (shine > 0)
 		{
@@ -251,21 +261,21 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			Ray reflectedRayC = Ray(hitpoint, reflectedDirection);
 			Ray reflectedRay = Ray(reflectedRayC.getPoint(BIAS), reflectedDirection);  //Self-shadowing?
 
-			//float angle = (reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module());		 // Já é o coseno
+																					   //float angle = (reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module());		 // Já é o coseno
 
 			Vec3 rColor = rayTracing(reflectedRay, depth + 1, 1);
 
 			//Vec3 nColor = Vec3(rColor.x*Ks*pow(angle, shine), rColor.y*Ks*pow(angle, shine), rColor.z*Ks*pow(angle, shine));
 
 			//printf("Ks: %f", Ks);
-			c = c + rColor*Ks;
+			c = c + rColor * Ks;
 		};
 
-		
+
 		//IF TRANSLUCID
 		if (trans > 0) {
 			// Source: https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/reflection-refraction-fresnel
-			
+
 			// Incident Ray:
 			Vec3 I = (ray.direction).normalize()*(-1);
 
@@ -273,13 +283,13 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			float angle1 = acos(I.dot(normal));
 			// Snell's law (refractionIndex/n2 = sin(angle2)/sin(angle1)
 			// RefrIndex vem do meio em que estamos, indexRef do novo material
-			float angle2 = asin((RefrIndex / indexRef )*sin(angle1));
+			float angle2 = asin((RefrIndex / indexRef)*sin(angle1));
 
 			// Vectors Calculations - Check Source Link
 			Vec3 N = normal;
-			Vec3 C = N*cos(angle1);
+			Vec3 C = N * cos(angle1);
 			Vec3 M = (I + C) / (sin(angle1));
-			Vec3 A = M*sin(angle2);
+			Vec3 A = M * sin(angle2);
 			Vec3 invN = normal * (-1);
 			Vec3 B = (invN)*cos(angle2);
 			Vec3 T = A + B;
@@ -290,7 +300,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			Vec3 rColor = rayTracing(refractedRay, depth + 1, indexRef);
 
 			// Color impact
-			c = c + rColor * (1-Ks);
+			c = c + rColor * (1 - Ks);
 
 		}
 	};
@@ -638,6 +648,19 @@ void setSphere() {
 }
 
 void setPlane() {
+	while (num_triangles < MAX_TRIANGLES) {
+		if (triangle[num_triangles][0] == NULL && triangle[num_triangles][1] == NULL && triangle[num_triangles][2] == NULL && triangle[num_triangles][3] == NULL, triangle[num_triangles][4] == NULL && triangle[num_triangles][5] == NULL && triangle[num_triangles][6] == NULL && triangle[num_triangles][7] == NULL && triangle[num_triangles][8] == NULL) {
+			break;
+		}
+		num_triangles++;
+	}
+
+	if (fscanf(nff, " 3 %g %g %g", &triangle[num_triangles][0], &triangle[num_triangles][1], &triangle[num_triangles][2]) != 0) {
+		fscanf(nff, "%g %g %g", &triangle[num_triangles][3], &triangle[num_triangles][4], &triangle[num_triangles][5]);
+		fscanf(nff, "%g %g %g", &triangle[num_triangles][6], &triangle[num_triangles][7], &triangle[num_triangles][8]);
+		printf("FOUND TRIANGLE NUMBER - %d\n", num_triangles);
+	}
+
 	while (num_planes < MAX_PLANES) {
 		if (plane[num_planes][0] == NULL) {
 			break;
@@ -655,7 +678,8 @@ void setPlane() {
 		plane[num_planes][15] = latestF[6];
 		plane[num_planes][16] = latestF[7];
 		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g  SHINE %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8], plane[num_planes][14]);
-	}
+	}	
+	
 }
 
 void setLight() {
@@ -695,7 +719,7 @@ int main(int argc, char* argv[])
 
 	//nff = fopen("mount_low.nff", "r");
 	//nff = fopen("balls_medium.nff", "r");
-	nff = fopen("input_file_test.nff", "r");
+	nff = fopen("mount_low.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
