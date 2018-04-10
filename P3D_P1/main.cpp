@@ -183,10 +183,10 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		//printf("TIPO INTERSECT: %d\n", tipoIntersect);
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();		// Falta voltar a resolver o self-shadowing
 		
-		// Cor começa em preto e vamos adicionando a cor de cada objecto
-		// A primeira cor a somar é a do material que intersectou
-		// Depois enviamos raios para cada luz, se não houver intereseção com essa luz, então fica apenas assim
-		// Se houver caminho aberto para cada luz, então somamos a contribuição de cada luz
+		// Cor comeï¿½a em preto e vamos adicionando a cor de cada objecto
+		// A primeira cor a somar ï¿½ a do material que intersectou
+		// Depois enviamos raios para cada luz, se nï¿½o houver intereseï¿½ï¿½o com essa luz, entï¿½o fica apenas assim
+		// Se houver caminho aberto para cada luz, entï¿½o somamos a contribuiï¿½ï¿½o de cada luz
 		Vec3 LightsContribution = Vec3(0, 0, 0);
 		
 		for (int h = 0; h < num_lights; h++)
@@ -215,14 +215,14 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 				}
 				else // Caminho obstruido por um objeto, suposto haver sombra?
 				{
-					//printf("Caminho obstruído\n");
+					//printf("Caminho obstruï¿½do\n");
 				}
 			}
 			
 			//printf("------------\n");
 			//printf("KDif: %f\n", Kdif);
 			//printf("Cor Luz: %f %f %f\n", ls.color.x, ls.color.y, ls.color.z);
-			//printf("Contribuição Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
+			//printf("Contribuiï¿½ï¿½o Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
 			//printf("Cor Anterior: %f %f %f\n", c.x, c.y, c.z);
 		}	
 
