@@ -25,6 +25,7 @@
 #include "Sphere.h"
 #include "Plane.h"
 #include "Light.h"
+#include "Poligon.h"
 
 #define CAPTION "ray tracer"
 
@@ -35,6 +36,8 @@
 #define MAX_SPHERES 15000
 #define MAX_PLANES 5
 #define MAX_LIGHTS 5
+
+#define BIAS 0.25
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -197,7 +200,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
 
 			Ray shadowRayC = Ray(hitpoint, L);
-			Ray shadowRay = Ray(shadowRayC.getPoint(0.25), L);
+			Ray shadowRay = Ray(shadowRayC.getPoint(BIAS), L);
 
 			if (normal.dot(L) > 0) {
 				if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
@@ -246,7 +249,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 			Vec3 reflectedDirection = (normal * 2 * normal.dot(V) - V);
 			Ray reflectedRayC = Ray(hitpoint, reflectedDirection);
-			Ray reflectedRay = Ray(reflectedRayC.getPoint(0.25), reflectedDirection);  //Self-shadowing?
+			Ray reflectedRay = Ray(reflectedRayC.getPoint(BIAS), reflectedDirection);  //Self-shadowing?
 
 			//float angle = (reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module());		 // Já é o coseno
 
@@ -254,40 +257,42 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 			//Vec3 nColor = Vec3(rColor.x*Ks*pow(angle, shine), rColor.y*Ks*pow(angle, shine), rColor.z*Ks*pow(angle, shine));
 
-			printf("Ks: %f", Ks);
+			//printf("Ks: %f", Ks);
 			c = c + rColor*Ks;
 		};
 
 		
-		/*
 		//IF TRANSLUCID
 		if (trans > 0) {
-			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
-			Vec3 V = (ray.origin - hitpoint).normalize();		// Raio do hitpoint at� ao olho
+			// Source: https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/reflection-refraction-fresnel
+			
+			// Incident Ray:
+			Vec3 I = (ray.direction).normalize()*(-1);
 
-			Vec3 reflectedDirection = (normal * 2 * normal.dot(V) - V).normalize();
-			Ray reflectedRay = Ray(hitpoint, reflectedDirection);
+			// cos(angle) = I.N
+			float angle1 = acos(I.dot(normal));
+			// Snell's law (refractionIndex/n2 = sin(angle2)/sin(angle1)
+			// RefrIndex vem do meio em que estamos, indexRef do novo material
+			float angle2 = asin((RefrIndex / indexRef )*sin(angle1));
 
-			float angle = acos((reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module()));
-			float nAngle = asin(indexRef*sin(angle));
+			// Vectors Calculations - Check Source Link
+			Vec3 N = normal;
+			Vec3 C = N*cos(angle1);
+			Vec3 M = (I + C) / (sin(angle1));
+			Vec3 A = M*sin(angle2);
+			Vec3 invN = normal * (-1);
+			Vec3 B = (invN)*cos(angle2);
+			Vec3 T = A + B;
 
-			Vec3 vt = normal * (V.dot(normal)) - V;
-			Vec3 t = (vt * (1 / vt.module())).normalize();
+			// T is the refracted Ray
+			Ray refractedRayC = Ray(hitpoint, T);
+			Ray refractedRay = Ray(refractedRayC.getPoint(BIAS), T);
+			Vec3 rColor = rayTracing(refractedRay, depth + 1, indexRef);
 
-			Vec3 invNormal = Vec3(-normal.x, -normal.y, -normal.z);
-			Vec3 refractedDirection = t * sin(nAngle) + (invNormal)*cos(nAngle);
-			Ray refractedRay = Ray(hitpoint, refractedDirection);
+			// Color impact
+			c = c + rColor * (1-Ks);
 
-			// get color with RayTracing
-			Vec3 rColor = rayTracing(refractedRay, depth + 1, 1);
-
-			// reduce color with transmittance coeficient
-			int nValue = shine;
-			Vec3 nColor = Vec3(rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue), rColor.x*trans*pow(nAngle, nValue));
-			c = c - nColor;
 		}
-
-		*/
 	};
 
 	return c;
@@ -688,8 +693,9 @@ int main(int argc, char* argv[])
 
 	char ch;
 
-	nff = fopen("balls_medium.nff", "r");
-	//nff = fopen("input_file_test.nff", "r");
+	//nff = fopen("mount_low.nff", "r");
+	//nff = fopen("balls_medium.nff", "r");
+	nff = fopen("input_file_test.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
