@@ -40,6 +40,7 @@
 #define MAX_LIGHTS 5
 
 #define BIAS 0.01
+#define MONTECARLO_THRESHOLD 0.3
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -352,6 +353,90 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	return c;
 };
 
+/////////////////////////////////////////////////////////////////////// SUPERSAMPLING
+
+Vec3 monteCarlo(double x, double y, int division)
+{
+	printf("NEW CALL at (%g, %g) - (%d) --------\n", x, y, division);
+
+	// 4X4 matrix
+	Vec3 mcMatrix[4];
+
+	// get colors from each point
+	Vec3 color;
+	mcMatrix[0] = rayTracing(c.getTopLeft(x, y), 1, 1.0);
+	mcMatrix[1] = rayTracing(c.getTopRight(x, y), 1, 1.0);
+	mcMatrix[2] = rayTracing(c.getBottomLeft(x, y), 1, 1.0);
+	mcMatrix[3] = rayTracing(c.getBottomRight(x, y), 1, 1.0);
+
+	printf("MCMatrix: (%f, %f, %f), (%f, %f, %f)\n          (%f, %f, %f), (%f, %f, %f)\n", mcMatrix[0].x, mcMatrix[0].y, mcMatrix[0].z, mcMatrix[1].x, mcMatrix[1].y, mcMatrix[1].z, mcMatrix[2].x, mcMatrix[2].y, mcMatrix[2].z, mcMatrix[3].x, mcMatrix[3].y, mcMatrix[3].z );
+
+	// if colors are within threshold
+	// Question: should the diff be between all colors? Or just the ones on the left and bottom?
+	Vec3 diffVec;
+	float diff=0;
+
+	for (int j = 0; j < 3; j++)
+	{
+		for (int h = j+1; h < 3; h++)
+		{
+			//printf("Iter\n");
+			diffVec = mcMatrix[j] - mcMatrix[h];
+			diff = abs(diffVec.x) + abs(diffVec.y) + abs(diffVec.z);
+			printf("Diff: %f\n", diff);
+			if (diff > MONTECARLO_THRESHOLD)	// As cores já são bastante diferentes, não é preciso continuar, partimos o pixel
+			{
+				//printf("Out First\n");
+				break;
+			}
+		}
+		if (diff > MONTECARLO_THRESHOLD)	// As cores já são bastante diferentes, não é preciso continuar, partimos o pixel
+		{
+			//printf("Out Second\n");
+			break;
+		}
+	}
+
+	if (diff < MONTECARLO_THRESHOLD)
+	{
+		// make average
+		color.x = (mcMatrix[0].x + mcMatrix[1].x + mcMatrix[2].x + mcMatrix[3].x) / 4;
+		color.y = (mcMatrix[0].y + mcMatrix[1].y + mcMatrix[2].y + mcMatrix[3].y) / 4;
+		color.y = (mcMatrix[0].z + mcMatrix[1].z + mcMatrix[2].z + mcMatrix[3].z) / 4;
+		printf("Devolver cor %f %f %f\n", color.x, color.y, color.z);
+		return color;
+	}
+	else
+	{
+		//printf("Repartir\n");
+		// Limit Recursion, return mean either way
+		if (division >= MAX_DEPTH)
+		{ 
+			color.x = (mcMatrix[0].x + mcMatrix[1].x + mcMatrix[2].x + mcMatrix[3].x) / 4;
+			color.y = (mcMatrix[0].y + mcMatrix[1].y + mcMatrix[2].y + mcMatrix[3].y) / 4;
+			color.y = (mcMatrix[0].z + mcMatrix[1].z + mcMatrix[2].z + mcMatrix[3].z) / 4;
+			return color;
+		}
+
+		// for cicle to divide the pixel in 4
+		for (int i = 0; i < 4; i++)
+		{
+			// call monteCarlo on each division
+			double newPixelX = x + (1/pow(2,division));		// 40+1/2 -> 40+1/4 -> 40+1/8
+			double newPixelY = y + (1/pow(2,division));		
+			printf("New Pixels: %f, %f\n", newPixelX, newPixelY);
+			color = monteCarlo( newPixelX, newPixelY, division+1);
+		}
+
+		return color;
+	}
+
+	//Ray r = c.getPrimaryRay(x, y);
+	//Vec3 color = rayTracing(r, 1, 1.0);
+
+	return Vec3();
+}
+
 /////////////////////////////////////////////////////////////////////// ERRORS
 
 bool isOpenGLError() {
@@ -515,10 +600,11 @@ void renderScene()
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
+			Vec3 color = monteCarlo(x, y, 1);
 
 			//YOUR 2 FUNTIONS:
-			Ray r = c.getPrimaryRay(x, y);
-			Vec3 color = rayTracing(r, 1, 1.0);
+			//Ray r = c.getPrimaryRay(x, y);
+			//Vec3 color = rayTracing(r, 1, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
@@ -755,9 +841,6 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-
-	
-
 	char ch;
 
 	//nff = fopen("mount_low.nff", "r");
