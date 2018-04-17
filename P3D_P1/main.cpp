@@ -41,6 +41,9 @@
 
 #define BIAS 0.01
 #define MONTECARLO_THRESHOLD 0.3
+#define JITTER_MATRIX 4
+#define JITER_MATRIX 2.5
+#define RAND_MAX 32767
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -90,6 +93,11 @@ int draw_mode = 0;
 
 int WindowHandle = 0;
 
+
+double r2()
+{
+	return (double)rand() / (double)RAND_MAX;
+}
 
 bool rayIntersect(Ray ray) {
 
@@ -437,6 +445,24 @@ Vec3 monteCarlo(double x, double y, int division)
 	return Vec3();
 }
 
+Vec3 jitter(double x, double y)
+{
+	Vec3 color = Vec3();
+	for (int p = 0; p < JITTER_MATRIX-1; p++)
+	{
+		for (int q = 0; q < JITTER_MATRIX-1; q++)
+		{
+			double jit = r2();
+			//printf("JIT: %g\n", jit);
+			Vec3 newPixel = rayTracing(c.getPrimaryRay(x+((p+jit)/JITTER_MATRIX), y + ((q + jit) / JITTER_MATRIX)), 1, 1.0);
+			//color = color + (newPixel / (JITTER_MATRIX*JITTER_MATRIX));
+			color = color + newPixel;
+		}
+	}
+	color = color / (JITTER_MATRIX*JITER_MATRIX);
+	return color;
+};
+
 /////////////////////////////////////////////////////////////////////// ERRORS
 
 bool isOpenGLError() {
@@ -600,9 +626,11 @@ void renderScene()
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
-			Vec3 color = monteCarlo(x, y, 1);
+			// ANTI ALIASING
+			//Vec3 color = monteCarlo(x, y, 1);
+			Vec3 color = jitter(x, y);
 
-			//YOUR 2 FUNTIONS:
+			// YOUR 2 FUNTIONS:
 			//Ray r = c.getPrimaryRay(x, y);
 			//Vec3 color = rayTracing(r, 1, 1.0);
 
@@ -842,10 +870,12 @@ void init(int argc, char* argv[])
 int main(int argc, char* argv[])
 {
 	char ch;
+	srand(time(NULL));
 
 	//nff = fopen("mount_low.nff", "r");
-	nff = fopen("balls_medium.nff", "r");
+	//nff = fopen("input_file_test.nff", "r");
 	//nff = fopen("mount_medium.nff", "r");
+	nff = fopen("balls_medium.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
