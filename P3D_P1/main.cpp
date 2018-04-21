@@ -27,6 +27,7 @@
 #include "Plane.h"
 #include "Light.h"
 #include "Triangle.h"
+#include "AreaLight.h"
 
 #define CAPTION "ray tracer"
 
@@ -44,6 +45,8 @@
 #define JITTER_MATRIX 4
 #define JITER_MATRIX 2.5
 #define RAND_MAX 32767
+
+#define LIGHT_SAMPLES 4
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -94,7 +97,7 @@ int draw_mode = 0;
 int WindowHandle = 0;
 
 
-double r2()
+double r2()	// Devolve random entre 0 e 1
 {
 	return (double)rand() / (double)RAND_MAX;
 }
@@ -254,7 +257,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 		for (int h = 0; h < num_lights; h++)
 		{
-
+			/* Point Based Lights
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
 
 			Vec3 L = (ls.position - hitpoint).normalize();    // Raio da luz para o hitpoint
@@ -287,6 +290,49 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			//printf("Cor Luz: %f %f %f\n", ls.color.x, ls.color.y, ls.color.z);
 			//printf("Contribui��o Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
 			//printf("Cor Anterior: %f %f %f\n", c.x, c.y, c.z);
+			*/
+
+			// Area Based Lights
+			// A principal alteração é que vamos alterar um pouco o sitio que tomamos como "centro" da luz quando lançamos um raio
+			// Fazemos esta alterações com valores aleatórios várias vezes e fazemos a média
+			AreaLight ls = AreaLight(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]), Vec3(1, 0, 0), Vec3(1, 0, 0));	// These two last vectors should be reviewed
+			Vec3 areaLightContribution = Vec3(0,0,0);
+
+			for (int a = 0; a < LIGHT_SAMPLES; a++)
+			{
+				float s1 = r2();	// Deslocações aleatorias entre 0 e 1
+				float s2 = r2();
+				// Alterando o "centro"
+				Vec3 newPosition = (ls.position + ls.sideA*s1 + ls.sideB*s2).normalize();
+
+				Vec3 L = (newPosition - hitpoint).normalize();    // Raio da luz para o hitpoint
+				Vec3 V = (ray.direction).normalize()*(-1);
+				Vec3 H = (L + V).normalize();
+				Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
+
+				Ray shadowRayC = Ray(hitpoint, L);
+				Ray shadowRay = Ray(shadowRayC.getPoint(BIAS), L);
+
+				if (normal.dot(L) > 0) {
+					if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
+					{
+						Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
+						Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
+
+						//printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
+						//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
+
+						areaLightContribution = areaLightContribution + difuse + specular;
+					}
+					else // Caminho obstruido por um objeto, suposto haver sombra?
+					{
+						//printf("Caminho obstru�do\n");
+					}
+				}
+			}
+
+			LightsContribution = areaLightContribution / LIGHT_SAMPLES;
+
 		}
 
 
