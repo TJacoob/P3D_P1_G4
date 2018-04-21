@@ -27,6 +27,7 @@
 #include "Plane.h"
 #include "Light.h"
 #include "Triangle.h"
+#include "AreaLight.h"
 
 #define CAPTION "ray tracer"
 
@@ -40,6 +41,12 @@
 #define MAX_LIGHTS 5
 
 #define BIAS 0.01
+#define MONTECARLO_THRESHOLD 0.3
+#define JITTER_MATRIX 4
+#define JITER_MATRIX 2.5
+#define RAND_MAX 32767
+
+#define LIGHT_SAMPLES 4
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -89,6 +96,11 @@ int draw_mode = 0;
 
 int WindowHandle = 0;
 
+
+double r2()	// Devolve random entre 0 e 1
+{
+	return (double)rand() / (double)RAND_MAX;
+}
 
 bool rayIntersect(Ray ray) {
 
@@ -245,7 +257,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 		for (int h = 0; h < num_lights; h++)
 		{
-
+			/* Point Based Lights
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
 
 			Vec3 L = (ls.position - hitpoint).normalize();    // Raio da luz para o hitpoint
@@ -278,6 +290,49 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			//printf("Cor Luz: %f %f %f\n", ls.color.x, ls.color.y, ls.color.z);
 			//printf("Contribui��o Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
 			//printf("Cor Anterior: %f %f %f\n", c.x, c.y, c.z);
+			*/
+
+			// Area Based Lights
+			// A principal alteração é que vamos alterar um pouco o sitio que tomamos como "centro" da luz quando lançamos um raio
+			// Fazemos esta alterações com valores aleatórios várias vezes e fazemos a média
+			AreaLight ls = AreaLight(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]), Vec3(1, 0, 0), Vec3(1, 0, 0));	// These two last vectors should be reviewed
+			Vec3 areaLightContribution = Vec3(0,0,0);
+
+			for (int a = 0; a < LIGHT_SAMPLES; a++)
+			{
+				float s1 = r2();	// Deslocações aleatorias entre 0 e 1
+				float s2 = r2();
+				// Alterando o "centro"
+				Vec3 newPosition = (ls.position + ls.sideA*s1 + ls.sideB*s2).normalize();
+
+				Vec3 L = (newPosition - hitpoint).normalize();    // Raio da luz para o hitpoint
+				Vec3 V = (ray.direction).normalize()*(-1);
+				Vec3 H = (L + V).normalize();
+				Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
+
+				Ray shadowRayC = Ray(hitpoint, L);
+				Ray shadowRay = Ray(shadowRayC.getPoint(BIAS), L);
+
+				if (normal.dot(L) > 0) {
+					if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
+					{
+						Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
+						Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
+
+						//printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
+						//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
+
+						areaLightContribution = areaLightContribution + difuse + specular;
+					}
+					else // Caminho obstruido por um objeto, suposto haver sombra?
+					{
+						//printf("Caminho obstru�do\n");
+					}
+				}
+			}
+
+			LightsContribution = areaLightContribution / LIGHT_SAMPLES;
+
 		}
 
 
@@ -350,6 +405,108 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	};
 
 	return c;
+};
+
+/////////////////////////////////////////////////////////////////////// SUPERSAMPLING
+
+Vec3 monteCarlo(double x, double y, int division)
+{
+	printf("NEW CALL at (%g, %g) - (%d) --------\n", x, y, division);
+
+	// 4X4 matrix
+	Vec3 mcMatrix[4];
+
+	// get colors from each point
+	Vec3 color;
+	mcMatrix[0] = rayTracing(c.getTopLeft(x, y), 1, 1.0);
+	mcMatrix[1] = rayTracing(c.getTopRight(x, y), 1, 1.0);
+	mcMatrix[2] = rayTracing(c.getBottomLeft(x, y), 1, 1.0);
+	mcMatrix[3] = rayTracing(c.getBottomRight(x, y), 1, 1.0);
+
+	printf("MCMatrix: (%f, %f, %f), (%f, %f, %f)\n          (%f, %f, %f), (%f, %f, %f)\n", mcMatrix[0].x, mcMatrix[0].y, mcMatrix[0].z, mcMatrix[1].x, mcMatrix[1].y, mcMatrix[1].z, mcMatrix[2].x, mcMatrix[2].y, mcMatrix[2].z, mcMatrix[3].x, mcMatrix[3].y, mcMatrix[3].z );
+
+	// if colors are within threshold
+	// Question: should the diff be between all colors? Or just the ones on the left and bottom?
+	Vec3 diffVec;
+	float diff=0;
+
+	for (int j = 0; j < 3; j++)
+	{
+		for (int h = j+1; h < 3; h++)
+		{
+			//printf("Iter\n");
+			diffVec = mcMatrix[j] - mcMatrix[h];
+			diff = abs(diffVec.x) + abs(diffVec.y) + abs(diffVec.z);
+			printf("Diff: %f\n", diff);
+			if (diff > MONTECARLO_THRESHOLD)	// As cores já são bastante diferentes, não é preciso continuar, partimos o pixel
+			{
+				//printf("Out First\n");
+				break;
+			}
+		}
+		if (diff > MONTECARLO_THRESHOLD)	// As cores já são bastante diferentes, não é preciso continuar, partimos o pixel
+		{
+			//printf("Out Second\n");
+			break;
+		}
+	}
+
+	if (diff < MONTECARLO_THRESHOLD)
+	{
+		// make average
+		color.x = (mcMatrix[0].x + mcMatrix[1].x + mcMatrix[2].x + mcMatrix[3].x) / 4;
+		color.y = (mcMatrix[0].y + mcMatrix[1].y + mcMatrix[2].y + mcMatrix[3].y) / 4;
+		color.y = (mcMatrix[0].z + mcMatrix[1].z + mcMatrix[2].z + mcMatrix[3].z) / 4;
+		printf("Devolver cor %f %f %f\n", color.x, color.y, color.z);
+		return color;
+	}
+	else
+	{
+		//printf("Repartir\n");
+		// Limit Recursion, return mean either way
+		if (division >= MAX_DEPTH)
+		{ 
+			color.x = (mcMatrix[0].x + mcMatrix[1].x + mcMatrix[2].x + mcMatrix[3].x) / 4;
+			color.y = (mcMatrix[0].y + mcMatrix[1].y + mcMatrix[2].y + mcMatrix[3].y) / 4;
+			color.y = (mcMatrix[0].z + mcMatrix[1].z + mcMatrix[2].z + mcMatrix[3].z) / 4;
+			return color;
+		}
+
+		// for cicle to divide the pixel in 4
+		for (int i = 0; i < 4; i++)
+		{
+			// call monteCarlo on each division
+			double newPixelX = x + (1/pow(2,division));		// 40+1/2 -> 40+1/4 -> 40+1/8
+			double newPixelY = y + (1/pow(2,division));		
+			printf("New Pixels: %f, %f\n", newPixelX, newPixelY);
+			color = monteCarlo( newPixelX, newPixelY, division+1);
+		}
+
+		return color;
+	}
+
+	//Ray r = c.getPrimaryRay(x, y);
+	//Vec3 color = rayTracing(r, 1, 1.0);
+
+	return Vec3();
+}
+
+Vec3 jitter(double x, double y)
+{
+	Vec3 color = Vec3();
+	for (int p = 0; p < JITTER_MATRIX-1; p++)
+	{
+		for (int q = 0; q < JITTER_MATRIX-1; q++)
+		{
+			double jit = r2();
+			//printf("JIT: %g\n", jit);
+			Vec3 newPixel = rayTracing(c.getPrimaryRay(x+((p+jit)/JITTER_MATRIX), y + ((q + jit) / JITTER_MATRIX)), 1, 1.0);
+			//color = color + (newPixel / (JITTER_MATRIX*JITTER_MATRIX));
+			color = color + newPixel;
+		}
+	}
+	color = color / (JITTER_MATRIX*JITER_MATRIX);
+	return color;
 };
 
 /////////////////////////////////////////////////////////////////////// ERRORS
@@ -515,10 +672,13 @@ void renderScene()
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
+			// ANTI ALIASING
+			//Vec3 color = monteCarlo(x, y, 1);
+			Vec3 color = jitter(x, y);
 
-			//YOUR 2 FUNTIONS:
-			Ray r = c.getPrimaryRay(x, y);
-			Vec3 color = rayTracing(r, 1, 1.0);
+			// YOUR 2 FUNTIONS:
+			//Ray r = c.getPrimaryRay(x, y);
+			//Vec3 color = rayTracing(r, 1, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
@@ -755,14 +915,13 @@ void init(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-
-	
-
 	char ch;
+	srand(time(NULL));
 
 	//nff = fopen("mount_low.nff", "r");
-	nff = fopen("balls_medium.nff", "r");
+	//nff = fopen("input_file_test.nff", "r");
 	//nff = fopen("mount_medium.nff", "r");
+	nff = fopen("balls_medium.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}

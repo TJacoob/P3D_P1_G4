@@ -54,6 +54,43 @@ public:
 		return Ray(eye, (dz + dy + dx).normalize());
 	}
 
+	// Monte Carlo Method
+	Ray getTopLeft(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 1));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 0));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+	Ray getTopRight(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 0));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 0));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+	Ray getBottomLeft(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 1));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 1));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+	Ray getBottomRight(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 0));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 1));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+	Ray getCenter(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 0.5));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 0.5));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+
 	void print() {
 		printf("CAMERA SETTINGS:\n");
 		printf("EYE: %f %f %f \n", eye.x, eye.y, eye.z);
