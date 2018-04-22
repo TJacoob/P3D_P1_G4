@@ -12,7 +12,9 @@ public:
 
 	// Operadores
 	Vec3 operator + (const Vec3 &v) const { return Vec3(x + v.x, y + v.y, z + v.z); };
+	Vec3 operator + (const float &c) const { return Vec3(x + c, y + c, z + c); };
 	Vec3 operator - (const Vec3 &v) const { return Vec3(x - v.x, y - v.y, z - v.z); };
+	Vec3 operator - (const float &c) const { return Vec3(x - c, y - c, z - c); };
 	Vec3 operator * (const float &c) const { return Vec3(x*c, y*c, z*c); };
 	Vec3 operator / (const float &c) const { return Vec3(x/c, y/c, z/c); };
 	//Vec3 operator * (const Vec3 &v) const { return Vec3(x * v.x, y * v.y, z * v.z); };  // Isto � multiplica��o direta de cada elemento do vetor
