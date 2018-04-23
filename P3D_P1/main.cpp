@@ -20,6 +20,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+#include "main.h"
 #include "Vec3.h"
 #include "Ray.h"
 #include "Camera.h"
@@ -28,6 +29,9 @@
 #include "Light.h"
 #include "Triangle.h"
 #include "AreaLight.h"
+#include "Object.h"
+#include "BBox.h"
+#include "Grid.h"
 
 #define CAPTION "ray tracer"
 
@@ -35,9 +39,7 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 6
-#define MAX_SPHERES 15000
 #define MAX_PLANES 5
-#define MAX_TRIANGLES 10000
 #define MAX_LIGHTS 5
 
 #define BIAS 0.01
@@ -73,17 +75,12 @@ Camera c;
 // Other Helpers
 Vec3 background;
 
-// Spheres Array
-float sphere[MAX_SPHERES][12];
-int num_spheres = 0;
 
 // Planes Array
 float plane[MAX_PLANES][17];
 int num_planes = 0;
 
-// TRIANGLES Array
-float triangle[MAX_TRIANGLES][17];
-int num_triangles = 0;
+
 
 // Lights Array
 float light[MAX_LIGHTS][6];	// X Y Z R G B
