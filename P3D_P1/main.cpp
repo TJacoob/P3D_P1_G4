@@ -159,6 +159,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	bool intersect = false;
 
+	/*
 	// REGULAR INTERSECTION MODEL - CHECK BELOW FOR GRID MODEL
 	//PLANE INTERSECTION CYCLE
 	if (num_planes != 0)
@@ -244,14 +245,14 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	}
 
 	// END OF REGULAR MODEL!!!
+	*/
 
 	// UNIFORM GRID MODEL
 	if (true)		//so pra condensar codigo-remover pra entrega
-	{
+	{	
+		shortT = grid.hit(ray);
+		printf("ShortT: %f\n", shortT);
 		
-		//shortT = grid.hit(ray);
-		//if (shortT == -1)
-			//intersect = false;
 	}
 
 	if (intersect)

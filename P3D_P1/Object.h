@@ -39,6 +39,11 @@ public:
 		return ((index.size() == 0) && (type.size() == 0));
 	}
 
+	bool isNotEmpty()
+	{
+		return ((index.size() > 0) && (type.size() > 0));
+	}
+
 	bool alreadyExists(int i)
 	{
 		if (std::find(index.begin(), index.end(), i) != index.end())

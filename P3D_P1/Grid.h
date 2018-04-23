@@ -42,6 +42,7 @@ public:
 		double s = pow((ss.x*ss.y*ss.z) / num_objects, 0.333333);
 		//printf("s: %g\n", s);
 		Vec3 n = ((ss*multi)/s) + 1;
+		nx = n.x; ny = n.y; nz = n.z;
 		//printf("ns: %f %f %f\n", n.x, n.y, n.z);
 
 		int num_cells = n.x * n.y * n.z;
@@ -258,7 +259,143 @@ public:
 			iz = clamp((point.z - p0.z)*nz / (p1.z - p0.z), 0, nz - 1);
 		}
 
-		return -1;
+		// Correr a grelha
+		Vec3 dt;
+		dt.x = (tMax.x - tMin.x) / nx;
+		dt.y = (tMax.y - tMin.y) / ny;
+		dt.z = (tMax.z - tMin.z) / nz;
+
+		Vec3 tNext, iStep, iStop;
+		
+		if (dir.x > 0)
+		{
+			tNext.x = tMin.x + (ix)* dt.x;
+			iStep.x = +1;
+			iStop.x = nx;
+		}
+		else
+		{
+			tNext.x = tMin.x + (nx - ix)* dt.x;
+			iStep.x = -1;
+			iStop.x = -1;
+		}
+
+		if (dir.x = 0.0)
+		{
+			tNext.x = 10000;
+			iStep.x = -1;
+			iStop.x = -1;
+		}
+
+		if (dir.y > 0)
+		{
+			tNext.y = tMin.y + (iy)* dt.y;
+			iStep.y = +1;
+			iStop.y = ny;
+		}
+		else
+		{
+			tNext.y = tMin.y + (ny - iy)* dt.y;
+			iStep.y = -1;
+			iStop.y = -1;
+		}
+
+		if (dir.y = 0.0)
+		{
+			tNext.y = 10000;
+			iStep.y = -1;
+			iStop.y = -1;
+		}
+
+		if (dir.z > 0)
+		{
+			tNext.z = tMin.z + (iz)* dt.z;
+			iStep.z = +1;
+			iStop.z = nz;
+		}
+		else
+		{
+			tNext.z = tMin.z + (nz - iz)* dt.z;
+			iStep.z = -1;
+			iStop.z = -1;
+		}
+
+		if (dir.z = 0.0)
+		{
+			tNext.z = 10000;
+			iStep.z = -1;
+			iStop.z = -1;
+		}
+
+		// Correr a grelha
+		while (true)
+		{
+			// obter o objeto dessa posição
+			float shortT = 10000, tempT;
+
+			if (tNext.x < tNext.y && tNext.x < tNext.z)		// Avança no X
+			{
+				printf("tNext.x %g\n", tNext.x);
+
+				if (shortT < tNext.x)
+					return shortT;
+
+				tNext.x += dt.x;
+				ix += iStep.x;
+
+				if (ix == iStop.x)
+					return -2;
+			}
+			else
+			{
+				if (tNext.y < tNext.z)		// Avança no Y
+				{
+					if (not(cells[ix + nx * iy + nx * ny * iz].isEmpty()))
+					{
+						for (int i = 0; i < cells[ix + nx * iy + nx * ny * iz].units; i++)
+						{
+							Sphere s = cells[ix + nx * iy + nx * ny * iz].getSphere(i);
+							tempT = s.intersect(ray);
+							if (tempT < shortT)
+								shortT = tempT;
+						}
+
+						if (shortT < tNext.y)
+							return shortT;
+					}
+
+					tNext.y += dt.y;
+					iy += iStep.y;
+
+					if (iy == iStop.y)
+						return -3;
+				}
+				else						// Avança no Z
+				{
+					if (not(cells[ix + nx * iy + nx * ny * iz].isEmpty()))
+					{
+						for (int i = 0; i < cells[ix + nx * iy + nx * ny * iz].units; i++)
+						{
+							Sphere s = cells[ix + nx * iy + nx * ny * iz].getSphere(i);
+							tempT = s.intersect(ray);
+							if (tempT < shortT)
+								shortT = tempT;
+						}
+
+						if (shortT < tNext.z)
+							return shortT;
+					}
+
+					tNext.z += dt.z;
+					iz += iStep.z;
+
+					if (iz == iStop.z)
+						return -4;
+				}
+			}
+		}
+
+		return -5;
 	}
 };
 	
