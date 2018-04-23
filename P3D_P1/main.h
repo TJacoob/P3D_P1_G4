@@ -13,9 +13,13 @@ int num_spheres = 0;
 float triangle[MAX_TRIANGLES][17];
 int num_triangles = 0;
 
-// Compiler doesn't recognize the clamp function arguments, so it's defined here 
-float clamp(float n, float lower, float upper) {
-	return std::max(lower, std::min(n, upper));
+
+float clamp(float v, float lo, float hi)
+{
+	//printf("Clamp values: %f %f %f - ", v, lo, hi);
+	if (v < lo) return lo;
+	if (hi < v) return hi;
+	else return v;
 }
 
 #endif 

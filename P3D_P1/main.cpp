@@ -75,18 +75,19 @@ Camera c;
 // Other Helpers
 Vec3 background;
 
-
 // Planes Array
 float plane[MAX_PLANES][17];
 int num_planes = 0;
-
-
 
 // Lights Array
 float light[MAX_LIGHTS][6];	// X Y Z R G B
 int num_lights = 0;
 
 float latestF[8];
+
+// Grid
+
+Grid grid;
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
 int draw_mode = 0;
@@ -143,13 +144,6 @@ bool rayIntersect(Ray ray) {
 	return false;
 }
 
-
-// ACCELARATION STRUCTURES
-
-bool regularIntersect()
-{
-
-}
 
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
@@ -254,10 +248,10 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	// UNIFORM GRID MODEL
 	if (true)		//so pra condensar codigo-remover pra entrega
 	{
-		Grid grid = Grid();
-		shortT = grid.hit(ray);
-		if (shortT == -1)
-			intersect = false;
+		
+		//shortT = grid.hit(ray);
+		//if (shortT == -1)
+			//intersect = false;
 	}
 
 	if (intersect)
@@ -680,6 +674,8 @@ void renderScene()
 {
 	clock_t begin = clock();
 
+	grid = Grid();
+
 	int index_pos = 0;
 	int index_col = 0;
 
@@ -936,7 +932,7 @@ int main(int argc, char* argv[])
 	//nff = fopen("mount_low.nff", "r");
 	//nff = fopen("input_file_test.nff", "r");
 	//nff = fopen("mount_medium.nff", "r");
-	nff = fopen("balls_medium.nff", "r");
+	nff = fopen("balls_low.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
