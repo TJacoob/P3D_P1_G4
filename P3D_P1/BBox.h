@@ -16,8 +16,14 @@ public:
 	BBox(void) {};
 
 	// Check if the bbox was hit by a ray
+	/*
 	bool hit(Ray r) {
 		return true;
+	}*/
+
+	bool isInside(Vec3 point)
+	{
+		return ((point.x > p0.x && point.x < p1.x) && (point.y > p0.y && point.y < p1.y) && (point.z > p0.z && point.z < p1.z));
 	}
 
 	void print()

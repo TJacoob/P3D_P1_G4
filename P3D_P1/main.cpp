@@ -144,6 +144,13 @@ bool rayIntersect(Ray ray) {
 }
 
 
+// ACCELARATION STRUCTURES
+
+bool regularIntersect()
+{
+
+}
+
 ///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
 Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
@@ -158,6 +165,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	bool intersect = false;
 
+	// REGULAR INTERSECTION MODEL - CHECK BELOW FOR GRID MODEL
 	//PLANE INTERSECTION CYCLE
 	if (num_planes != 0)
 	{
@@ -241,9 +249,19 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		}
 	}
 
+	// END OF REGULAR MODEL!!!
+
+	// UNIFORM GRID MODEL
+	if (true)		//so pra condensar codigo-remover pra entrega
+	{
+		Grid grid = Grid();
+		shortT = grid.hit(ray);
+		if (shortT == -1)
+			intersect = false;
+	}
+
 	if (intersect)
 	{
-		//printf("TIPO INTERSECT: %d\n", tipoIntersect);
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();		// Falta voltar a resolver o self-shadowing
 
 																				// Cor come�a em preto e vamos adicionando a cor de cada objecto

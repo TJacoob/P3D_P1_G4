@@ -20,7 +20,7 @@ public:
 	//std::vector<std::tuple<>> cells;	// (index, type) -> type 0 for spheres, 1 for triangles
 	
 	//Grid(Vec3 p0, Vec3 p1) : p0(p0), p1(p1) {};
-	Grid(void) {};
+	Grid(void) { setup_cells() };
 
 	void setup_cells()
 	{
@@ -30,6 +30,7 @@ public:
 		int num_objects = num_spheres + num_triangles;
 		int multi = 2;    // Scales the number of cells per objects (8-10)
 
+		// Setup the grid bouding box
 		bbox.p0.x = p0.x; bbox.p0.y = p0.y; bbox.p0.z = p0.z;
 		bbox.p1.x = p1.x; bbox.p1.y = p1.y; bbox.p1.z = p1.z;
 
@@ -79,6 +80,28 @@ public:
 
 						}
 						*/
+					}
+
+		}
+
+		// Repetir para os triangulos :|
+		for (int k = 0; k <= num_triangles; k++) {
+			Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
+			BBox obj = t.bbox;
+
+			int ixmin = clamp((obj.p0.x - p0.x) * nx / (p1.x - p0.x), 0, nx - 1);
+			int iymin = clamp((obj.p0.y - p0.y) * ny / (p1.y - p0.y), 0, ny - 1);
+			int izmin = clamp((obj.p0.z - p0.z) * nz / (p1.z - p0.z), 0, nz - 1);
+			int ixmax = clamp((obj.p1.x - p0.x) * nx / (p1.x - p0.x), 0, nx - 1);
+			int iymax = clamp((obj.p1.y - p0.y) * ny / (p1.y - p0.y), 0, ny - 1);
+			int izmax = clamp((obj.p1.z - p0.z) * nz / (p1.z - p0.z), 0, nz - 1);
+
+			for (int iz = izmin; iz <= izmax; iz++)
+				for (int iy = iymin; iy <= iymax; iy++)
+					for (int ix = ixmin; ix <= ixmax; ix++)
+					{
+						int index = ix + nx * iy + nx * ny * iz;
+						cells[index].push_back(Object(i, 0));
 					}
 
 		}
@@ -156,6 +179,52 @@ public:
 		return p0;
 	}
 
+	int hit(Ray ray)		// return -1 if not hit, return shortestT if hit
+	{
+		Vec3 ori = ray.origin;
+		Vec3 dir = ray.direction;
+		Vec3 p0 = bbox.p0;		// (Vmin) Hitpoint entrada?
+		Vec3 p1 = bbox.p1;		// (Vmax) Hitpoint saída?
+
+		Vec3 tMin; Vec3 tMax;	
+
+		tMin = (p0 - ori)/dir;
+		tMax = (p1 - ori) / dir;
+
+		float temp0, temp1;
+
+		// no temp0 fica o valor menor do vetor
+		if (tMin.x > tMin.y) temp0 = tMin.x;
+		else temp0 = tMin.y;
+		if (tMin.z > temp0) temp0 = tMin.z;
+
+		// no temp1 fica o valor maior do vetor
+		if (tMin.x > tMin.y) temp0 = tMin.x;
+		else temp0 = tMin.y;
+		if (tMin.z > temp0) temp0 = tMin.z;
+
+		if (temp0 > temp1)
+			temp1 = temp0;
+
+		// Coordenadas iniciais
+		int ix, iy, iz;
+
+		if (bbox.isInside(ori))
+		{
+			ix = clamp((ori.x - p0.x)*nx / (p1.x-p0.x), 0, nx - 1);
+			iy = clamp((ori.y - p0.y)*ny / (p1.y - p0.y), 0, ny - 1);
+			iz = clamp((ori.z - p0.z)*nz / (p1.z - p0.z), 0, nz - 1);
+		}
+		else
+		{	// Se o raio estiver fora da caixa, encontrar ponto de entrada e alterar coordenadas iniciais
+			Vec3 point = ori + dir *temp0;
+			ix = clamp((point.x - p0.x)*nx / (p1.x - p0.x), 0, nx - 1);
+			iy = clamp((point.y - p0.y)*ny / (p1.y - p0.y), 0, ny - 1);
+			iz = clamp((point.z - p0.z)*nz / (p1.z - p0.z), 0, nz - 1);
+		}
+
+		return -1;
+	}
 };
 	
 
