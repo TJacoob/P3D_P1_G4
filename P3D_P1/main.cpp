@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////
 //
 // P3D Course
-// (c) 2016 by João Madeiras Pereira
+// (c) 2016 by Joï¿½o Madeiras Pereira
 // TEMPLATE: Whitted Ray Tracing NFF scenes and drawing points with Modern OpenGL
 //
 //You should develop your rayTracing( Ray ray, int depth, float RefrIndex) which returns a color and
@@ -14,16 +14,25 @@
 #include <sstream>
 #include <string>
 #include <stdio.h>
+#include <algorithm>
+#include <time.h>
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+#include "main.h"
 #include "Vec3.h"
 #include "Ray.h"
 #include "Camera.h"
 #include "Sphere.h"
 #include "Plane.h"
 #include "Light.h"
+#include "Triangle.h"
+#include "AreaLight.h"
+#include "RGBType.h"
+#include "Object.h"
+#include "BBox.h"
+#include "Grid.h"
 
 #define CAPTION "ray tracer"
 
@@ -31,9 +40,16 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 6
-#define MAX_SPHERES 10
 #define MAX_PLANES 5
 #define MAX_LIGHTS 5
+
+#define BIAS 0.01
+#define MONTECARLO_THRESHOLD 0.3
+#define JITTER_MATRIX 4
+#define JITER_MATRIX 2.5
+#define RAND_MAX 32767
+
+#define LIGHT_SAMPLES 4
 
 // Points defined by 2 attributes: positions which are stored in vertices array and colors which are stored in colors array
 float *colors;
@@ -41,6 +57,8 @@ float *vertices;
 
 int size_vertices;
 int size_colors;
+
+int thisone;
 
 GLfloat m[16];  //projection matrix initialized by ortho function
 
@@ -60,10 +78,6 @@ Camera c;
 // Other Helpers
 Vec3 background;
 
-// Spheres Array
-float sphere[MAX_SPHERES][12];
-int num_spheres = 0;
-
 // Planes Array
 float plane[MAX_PLANES][17];
 int num_planes = 0;
@@ -74,37 +88,33 @@ int num_lights = 0;
 
 float latestF[8];
 
+// Grid
+
+Grid grid;
+
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
 int draw_mode = 0;
 
 int WindowHandle = 0;
 
-///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
 
-Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
+double r2()	// Devolve random entre 0 e 1
 {
-	Vec3 c = background;
-	Vec3 normal;
-	float tempT, shortT;
-	float Kdif, Ks, shine;
+	return (double)rand() / (double)RAND_MAX;
+}
 
-	bool intersect = false;
+bool rayIntersect(Ray ray) {
+
+	float planeIntersect, sphereIntersect, triangleIntersect;
 
 	//PLANE INTERSECTION CYCLE
 	for (int j = 0; j <= num_planes; j++) {
 		Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
-
-		shortT = p.intersect(ray);
-
-		if (shortT != 0) {
-			intersect = true;
-			c = p.color;
-			normal = p.getNormal();
-			Kdif = p.Kdif;
-			Ks = p.Ks;
-			shine = p.Shine;
-		}
-		else {
+		//printf("testando planos\n");
+		planeIntersect = p.intersect(ray);
+		if (planeIntersect != 0) {
+			//printf("INTERSECTEI UM PLANOOOO\n");
+			return true;
 
 		}
 	}
@@ -112,73 +122,405 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	//SPHERE INTERSECTION CYCLE
 	for (int i = 0; i <= num_spheres; i++) {
 		Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
+		//printf("testando esferas\n");
+		sphereIntersect = s.intersect(ray);
 
-		tempT = s.intersect(ray);
-
-		if (tempT == 0) {
-
+		if (sphereIntersect != 0) {
+			//printf("INTERSECTEI UMA ESFERAAAAA\n");
+			return true;
 		}
-		else {
-			intersect = true;
-			if (tempT < shortT) {
-				shortT = tempT;
-				c = s.color;
-				normal = s.getNormal(ray, tempT);
-				Kdif = s.Kdif;
-				Ks = s.Ks;
-				shine = s.Shine;
+	}
+
+	//TRIANGLE INTERSECTION CYCLE
+	for (int k = 0; k <= num_triangles; k++) {
+		Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
+
+		triangleIntersect = t.intersect(ray);
+		//printf("Triangle T: %f \n", triangleIntersect);
+
+		if (triangleIntersect != 0) {
+			//printf("INTERSECTEI UM TRIANGULO\n");
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+///////////////////////////////////////////////////////////////////////  RAY-TRACE SCENE
+
+Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
+{
+	Vec3 c = background;
+	Vec3 normal;
+	float tempT = 0, altT = 0, shortT = 1000;
+	float Kdif = 0, Ks = 0, shine = 0, trans = 0, indexRef = 0;
+	int fs;
+
+	int tipoIntersect = 0;
+
+	bool intersect = false;
+
+	/*
+	// REGULAR INTERSECTION MODEL - CHECK BELOW FOR GRID MODEL
+	//PLANE INTERSECTION CYCLE
+	if (num_planes != 0)
+	{
+		for (int j = 0; j < num_planes; j++) {
+			Plane p(Vec3(plane[j][0], plane[j][1], plane[j][2]), Vec3(plane[j][3], plane[j][4], plane[j][5]), Vec3(plane[j][6], plane[j][7], plane[j][8]), Vec3(plane[j][9], plane[j][10], plane[j][11]), plane[j][12], plane[j][13], plane[j][14], plane[j][15], plane[j][16]);
+
+			shortT = p.intersect(ray);
+
+			if (shortT != 0) {
+				intersect = true;
+				c = p.color;
+				normal = p.getNormal();
+				Kdif = p.Kdif;
+				Ks = p.Ks;
+				shine = p.Shine;
+				trans = p.Trans;
+				indexRef = p.IndexRef;
+				tipoIntersect = 0;
 			}
-			//Vec3 hitpoint = ray.origin + ray.direction*t;
-		}
+			else {
 
+			}
+		}
+	}
+
+	//SPHERE INTERSECTION CYCLE
+	if (num_spheres != 0)
+	{
+		for (int i = 0; i < num_spheres; i++) {
+			Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
+
+			tempT = s.intersect(ray);
+
+			if (tempT == 0) {
+
+			}
+			else {
+				intersect = true;
+				if (tempT < shortT) {
+					shortT = tempT;
+					c = s.color;
+					normal = s.getNormal(ray, shortT);
+					Kdif = s.Kdif;
+					Ks = s.Ks;
+					shine = s.Shine;
+					trans = s.Trans;
+					indexRef = s.IndexRef;
+					tipoIntersect = 1;
+				}
+			}
+		}
+	}
+
+	//TRIANGLE INTERSECTION CYCLE
+	if (num_triangles != 0)
+	{
+		for (int k = 0; k < num_triangles; k++) {
+			//printf("TRIANGLE %d p1 %g %g %g p2 %g %g %g p3 %g %g %g\n\n", k, triangle[k][0], triangle[k][1], triangle[k][2], triangle[k][3], triangle[k][4], triangle[k][5], triangle[k][6], triangle[k][7], triangle[k][8]);
+			Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
+
+			altT = t.intersect(ray);
+
+			if (altT == 0) {
+
+			}
+			else
+			{
+				intersect = true;
+				if (altT < shortT) {
+					shortT = tempT;
+					c = t.color;
+					normal = t.getNormal();
+					Kdif = t.Kdif;
+					Ks = t.Ks;
+					shine = t.Shine;
+					trans = t.Trans;
+					indexRef = t.IndexRef;
+					tipoIntersect = 2;
+				}
+			}
+		}
+	}
+
+	// END OF REGULAR MODEL!!!
+	*/
+
+	// UNIFORM GRID MODEL
+	if (true)		//so pra condensar codigo-remover pra entrega
+	{	
+		shortT = grid.hit(ray);
+		printf("ShortT: %f\n", shortT);
+		
 	}
 
 	if (intersect)
 	{
-		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();
-		// recuperar normal que vem de trás
-		Vec3 assistantColor;
+		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();		// Falta voltar a resolver o self-shadowing
 
-		for (int h = 0; h <= num_lights; h++)
+																				// Cor comeï¿½a em preto e vamos adicionando a cor de cada objecto
+																				// A primeira cor a somar ï¿½ a do material que intersectou
+																				// Depois enviamos raios para cada luz, se nï¿½o houver intereseï¿½ï¿½o com essa luz, entï¿½o fica apenas assim
+																				// Se houver caminho aberto para cada luz, entï¿½o somamos a contribuiï¿½ï¿½o de cada luz
+		Vec3 LightsContribution = Vec3(0, 0, 0);
+
+		for (int h = 0; h < num_lights; h++)
 		{
+			//printf("Num lights is %d\n", num_lights);
+			/* Point Based Lights
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
-			Vec3 L = (ls.position - hitpoint).normalize();
-			Ray shadowRay = Ray(hitpoint, L);
-			normal = Vec3(-normal.x, -normal.y, -normal.z).normalize();
-	
-			if ( L.dot(normal) > 0) // Raio a ir para fora do objeto?
+
+			Vec3 L = (ls.position - hitpoint).normalize();    // Raio da luz para o hitpoint
+			Vec3 V = (ray.direction).normalize()*(-1);
+			Vec3 H = (L + V).normalize();
+			Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
+
+			Ray shadowRayC = Ray(hitpoint, L);
+			Ray shadowRay = Ray(shadowRayC.getPoint(BIAS), L);
+
+			if (normal.dot(L) > 0) {
+			if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
 			{
-				Vec3 shadowColor = rayTracing(shadowRay, depth+1, 1);
-				if (shadowColor.equals(background)) // Não há interseção com nada, é pq está caminho aberto até à luz
-				{
-					Vec3 r = (normal*(L.dot(normal))*2 - L).normalize();
+			Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
+			Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
 
-					assistantColor = assistantColor + (ls.color*Kdif)*(normal.dot(L)) + (ls.color*Ks)*(r.dot(L)) ^ h;//CORRIGIR H!!!!
-				}
-				else // Caminho está obstruído por um objeto, é suposto haver sombra?
-				{
-					assistantColor = Vec3(0, 0, 0);
+			//printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
+			//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
+
+			LightsContribution = LightsContribution + difuse + specular;
+			}
+			else // Caminho obstruido por um objeto, suposto haver sombra?
+			{
+			//printf("Caminho obstruï¿½do\n");
+			}
+			}
+
+			//printf("------------\n");
+			//printf("KDif: %f\n", Kdif);
+			//printf("Cor Luz: %f %f %f\n", ls.color.x, ls.color.y, ls.color.z);
+			//printf("Contribuiï¿½ï¿½o Luzes: %f %f %f\n", LightsContribution.x, LightsContribution.y, LightsContribution.z);
+			//printf("Cor Anterior: %f %f %f\n", c.x, c.y, c.z);
+			*/
+
+			// Area Based Lights
+			// A principal alteraÃ§Ã£o Ã© que vamos alterar um pouco o sitio que tomamos como "centro" da luz quando lanÃ§amos um raio
+			// Fazemos esta alteraÃ§Ãµes com valores aleatÃ³rios vÃ¡rias vezes e fazemos a mÃ©dia
+			AreaLight ls = AreaLight(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]), Vec3(1, 0, 0), Vec3(1, 0, 0));	// These two last vectors should be reviewed
+			Vec3 areaLightContribution = Vec3(0, 0, 0);
+
+			for (int a = 0; a < LIGHT_SAMPLES; a++)
+			{
+				float s1 = r2();	// DeslocaÃ§Ãµes aleatorias entre 0 e 1
+				float s2 = r2();
+				// Alterando o "centro"
+				Vec3 newPosition = (ls.position + ls.sideA*s1 + ls.sideB*s2).normalize();
+
+				Vec3 L = (newPosition - hitpoint).normalize();    // Raio da luz para o hitpoint
+				Vec3 V = (ray.direction).normalize()*(-1);
+				Vec3 H = (L + V).normalize();
+				Vec3 r = (normal * 2 * L.dot(normal) - L).normalize();
+
+				Ray shadowRayC = Ray(hitpoint, L);
+				Ray shadowRay = Ray(shadowRayC.getPoint(BIAS), L);
+
+				if (normal.dot(L) > 0) {
+					if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
+					{
+						Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
+						Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
+
+						//printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
+						//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
+
+						areaLightContribution = areaLightContribution + difuse + specular;
+					}
+					else // Caminho obstruido por um objeto, suposto haver sombra?
+					{
+						//printf("Caminho obstruï¿½do\n");
+					}
 				}
 			}
-			
-			if (depth >= MAX_DEPTH) {
-				printf("depth: %d\n", depth);
-				return c;
-			}
-			
+
+			LightsContribution = areaLightContribution / LIGHT_SAMPLES;
+
 		}
-		
-		c = c + assistantColor;
 
-		
 
-		
+		//printf("COR DO MATERIAL");
+
+		c = (c * Kdif + (LightsContribution / num_lights));
+
+		//printf("Cor Final: %f %f %f\n", c.x, c.y, c.z);
+
+
+		//printf("%g %g %g \n\n ", assistantColor.x, assistantColor.y, assistantColor.z);
+
+		if (depth >= MAX_DEPTH) {
+			printf("depth: %d\n", depth);
+			return c;
+		}
+
+
 		//IF REFLECIVE
+		if (shine > 0)
+		{
+			Vec3 V = (ray.direction).normalize()*(-1);
+
+			Vec3 reflectedDirection = (normal * 2 * normal.dot(V) - V);
+			Ray reflectedRayC = Ray(hitpoint, reflectedDirection);
+			Ray reflectedRay = Ray(reflectedRayC.getPoint(BIAS), reflectedDirection);  //Self-shadowing?
+
+																					   //float angle = (reflectedDirection.dot(V)) / (V.module()*reflectedDirection.module());		 // JÃ¡ Ã© o coseno
+
+			Vec3 rColor = rayTracing(reflectedRay, depth + 1, 1);
+
+			//Vec3 nColor = Vec3(rColor.x*Ks*pow(angle, shine), rColor.y*Ks*pow(angle, shine), rColor.z*Ks*pow(angle, shine));
+
+			//printf("Ks: %f", Ks);
+			c = c + rColor * Ks;
+		};
+
 
 		//IF TRANSLUCID
+		if (trans > 0) {
+			// Source: https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/reflection-refraction-fresnel
+
+			// Incident Ray:
+			Vec3 I = (ray.direction).normalize()*(-1);
+
+			// cos(angle) = I.N
+			float angle1 = acos(I.dot(normal));
+			// Snell's law (refractionIndex/n2 = sin(angle2)/sin(angle1)
+			// RefrIndex vem do meio em que estamos, indexRef do novo material
+			float angle2 = asin((RefrIndex / indexRef)*sin(angle1));
+
+			// Vectors Calculations - Check Source Link
+			Vec3 N = normal;
+			Vec3 C = N * cos(angle1);
+			Vec3 M = (I + C) / (sin(angle1));
+			Vec3 A = M * sin(angle2);
+			Vec3 invN = normal * (-1);
+			Vec3 B = (invN)*cos(angle2);
+			Vec3 T = A + B;
+
+			// T is the refracted Ray
+			Ray refractedRayC = Ray(hitpoint, T);
+			Ray refractedRay = Ray(refractedRayC.getPoint(BIAS), T);
+			Vec3 rColor = rayTracing(refractedRay, depth + 1, indexRef);
+
+			// Color impact
+			c = c + rColor * (1 - Ks);
+
+		}
 	};
 
 	return c;
+};
+
+/////////////////////////////////////////////////////////////////////// SUPERSAMPLING
+
+Vec3 monteCarlo(double x, double y, int division)
+{
+	printf("NEW CALL at (%g, %g) - (%d) --------\n", x, y, division);
+
+	// 4X4 matrix
+	Vec3 mcMatrix[4];
+
+	// get colors from each point
+	Vec3 color;
+	mcMatrix[0] = rayTracing(c.getTopLeft(x, y), 1, 1.0);
+	mcMatrix[1] = rayTracing(c.getTopRight(x, y), 1, 1.0);
+	mcMatrix[2] = rayTracing(c.getBottomLeft(x, y), 1, 1.0);
+	mcMatrix[3] = rayTracing(c.getBottomRight(x, y), 1, 1.0);
+
+	printf("MCMatrix: (%f, %f, %f), (%f, %f, %f)\n          (%f, %f, %f), (%f, %f, %f)\n", mcMatrix[0].x, mcMatrix[0].y, mcMatrix[0].z, mcMatrix[1].x, mcMatrix[1].y, mcMatrix[1].z, mcMatrix[2].x, mcMatrix[2].y, mcMatrix[2].z, mcMatrix[3].x, mcMatrix[3].y, mcMatrix[3].z);
+
+	// if colors are within threshold
+	// Question: should the diff be between all colors? Or just the ones on the left and bottom?
+	Vec3 diffVec;
+	float diff = 0;
+
+	for (int j = 0; j < 3; j++)
+	{
+		for (int h = j + 1; h < 3; h++)
+		{
+			//printf("Iter\n");
+			diffVec = mcMatrix[j] - mcMatrix[h];
+			diff = abs(diffVec.x) + abs(diffVec.y) + abs(diffVec.z);
+			printf("Diff: %f\n", diff);
+			if (diff > MONTECARLO_THRESHOLD)	// As cores jÃ¡ sÃ£o bastante diferentes, nÃ£o Ã© preciso continuar, partimos o pixel
+			{
+				//printf("Out First\n");
+				break;
+			}
+		}
+		if (diff > MONTECARLO_THRESHOLD)	// As cores jÃ¡ sÃ£o bastante diferentes, nÃ£o Ã© preciso continuar, partimos o pixel
+		{
+			//printf("Out Second\n");
+			break;
+		}
+	}
+
+	if (diff < MONTECARLO_THRESHOLD)
+	{
+		// make average
+		color.x = (mcMatrix[0].x + mcMatrix[1].x + mcMatrix[2].x + mcMatrix[3].x) / 4;
+		color.y = (mcMatrix[0].y + mcMatrix[1].y + mcMatrix[2].y + mcMatrix[3].y) / 4;
+		color.y = (mcMatrix[0].z + mcMatrix[1].z + mcMatrix[2].z + mcMatrix[3].z) / 4;
+		printf("Devolver cor %f %f %f\n", color.x, color.y, color.z);
+		return color;
+	}
+	else
+	{
+		//printf("Repartir\n");
+		// Limit Recursion, return mean either way
+		if (division >= MAX_DEPTH)
+		{
+			color.x = (mcMatrix[0].x + mcMatrix[1].x + mcMatrix[2].x + mcMatrix[3].x) / 4;
+			color.y = (mcMatrix[0].y + mcMatrix[1].y + mcMatrix[2].y + mcMatrix[3].y) / 4;
+			color.y = (mcMatrix[0].z + mcMatrix[1].z + mcMatrix[2].z + mcMatrix[3].z) / 4;
+			return color;
+		}
+
+		// for cicle to divide the pixel in 4
+		for (int i = 0; i < 4; i++)
+		{
+			// call monteCarlo on each division
+			double newPixelX = x + (1 / pow(2, division));		// 40+1/2 -> 40+1/4 -> 40+1/8
+			double newPixelY = y + (1 / pow(2, division));
+			printf("New Pixels: %f, %f\n", newPixelX, newPixelY);
+			color = monteCarlo(newPixelX, newPixelY, division + 1);
+		}
+
+		return color;
+	}
+
+	//Ray r = c.getPrimaryRay(x, y);
+	//Vec3 color = rayTracing(r, 1, 1.0);
+
+	return Vec3();
+}
+
+Vec3 jitter(double x, double y)
+{
+	Vec3 color = Vec3();
+	for (int p = 0; p < JITTER_MATRIX - 1; p++)
+	{
+		for (int q = 0; q < JITTER_MATRIX - 1; q++)
+		{
+			double jit = r2();
+			//printf("JIT: %g\n", jit);
+			Vec3 newPixel = rayTracing(c.getPrimaryRay(x + ((p + jit) / JITTER_MATRIX), y + ((q + jit) / JITTER_MATRIX)), 1, 1.0);
+			//color = color + (newPixel / (JITTER_MATRIX*JITTER_MATRIX));
+			color = color + newPixel;
+		}
+	}
+	color = color / ((JITTER_MATRIX - 1)*(JITER_MATRIX- 1));
+	return color;
 };
 
 /////////////////////////////////////////////////////////////////////// ERRORS
@@ -277,8 +619,8 @@ void createBufferObjects()
 	glGenBuffers(2, VboId);
 	glBindBuffer(GL_ARRAY_BUFFER, VboId[0]);
 
-	/* Não é necessário fazer glBufferData, ou seja o envio dos pontos para a placa gráfica pois isso
-	é feito na drawPoints em tempo de execução com GL_DYNAMIC_DRAW */
+	/* Nï¿½o ï¿½ necessï¿½rio fazer glBufferData, ou seja o envio dos pontos para a placa grï¿½fica pois isso
+	ï¿½ feito na drawPoints em tempo de execuï¿½ï¿½o com GL_DYNAMIC_DRAW */
 
 	glEnableVertexAttribArray(VERTEX_COORD_ATTRIB);
 	glVertexAttribPointer(VERTEX_COORD_ATTRIB, 2, GL_FLOAT, 0, 0, 0);
@@ -331,10 +673,87 @@ void drawPoints()
 
 /////////////////////////////////////////////////////////////////////// CALLBACKS
 
+
+void saveBMP(const char *filename, int x, int y, int dpi, RGBType *data) {
+	FILE *f;
+	int k = x * y;
+	int s = 4 * k;
+	int filesize = 54 + s;
+
+	double factor = 39.375;
+	int m = static_cast<int>(factor);
+
+	int ppm = dpi * m;
+
+	unsigned char bmpfileheader[14] = { 'B', 'M', 0,0,0,0, 0,0,0,0, 54,0,0,0 };
+	unsigned char bmpinfoheader[40] = { 40,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,24,0};
+
+	bmpfileheader[ 2] = (unsigned char)(filesize);
+	bmpfileheader[ 3] = (unsigned char)(filesize>>8);
+	bmpfileheader[ 4] = (unsigned char)(filesize>>16);
+	bmpfileheader[ 5] = (unsigned char)(filesize>>24);
+
+	bmpinfoheader[ 4] = (unsigned char)(x);
+	bmpinfoheader[ 5] = (unsigned char)(x>>8);
+	bmpinfoheader[ 6] = (unsigned char)(x>>16);
+	bmpinfoheader[ 7] = (unsigned char)(x>>24);
+
+	bmpinfoheader[ 8] = (unsigned char)(y);
+	bmpinfoheader[ 9] = (unsigned char)(y >> 8);
+	bmpinfoheader[ 10] = (unsigned char)(y >> 16);
+	bmpinfoheader[ 11] = (unsigned char)(y >> 24);
+
+	bmpinfoheader[21] = (unsigned char)(s);
+	bmpinfoheader[22] = (unsigned char)(s >> 8);
+	bmpinfoheader[23] = (unsigned char)(s >> 16);
+	bmpinfoheader[24] = (unsigned char)(s >> 24);
+
+	bmpinfoheader[25] = (unsigned char)(ppm);
+	bmpinfoheader[26] = (unsigned char)(ppm >> 8);
+	bmpinfoheader[27] = (unsigned char)(ppm >> 16);
+	bmpinfoheader[28] = (unsigned char)(ppm >> 24);
+
+	bmpinfoheader[29] = (unsigned char)(ppm);
+	bmpinfoheader[30] = (unsigned char)(ppm >> 8);
+	bmpinfoheader[31] = (unsigned char)(ppm >> 16);
+	bmpinfoheader[32] = (unsigned char)(ppm >> 24);
+
+	f = fopen(filename, "wb");
+
+	fwrite(bmpfileheader, 1, 14, f);
+	fwrite(bmpinfoheader, 1, 40, f);
+
+	for (int i = 0; i < k; i++) {
+		RGBType rgb = data[i];
+
+		float red = (data[i].r) * 255;
+		float green = (data[i].g) * 255;
+		float blue = (data[i].b) * 255;
+
+		unsigned char color[3] = { (int)floor(blue), (int)floor(green) , (int)floor(red) };
+
+		fwrite(color, 1, 3, f);
+
+	}
+
+	fclose(f);
+
+}
+
+
 // Render function by primary ray casting from the eye towards the scene's objects
 
 void renderScene()
 {
+	clock_t begin = clock();
+
+	grid = Grid();
+
+	int dpi = 72;
+
+	RGBType *pixels = new RGBType[RES_Y*RES_X];
+	int n = RES_X * RES_Y;
+
 	int index_pos = 0;
 	int index_col = 0;
 
@@ -342,35 +761,111 @@ void renderScene()
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
+			thisone = y * RES_X + x;
+
+			
+
+
+			// ANTI ALIASING
+			//Vec3 color = monteCarlo(x, y, 1);
+			Vec3 color = jitter(x, y);
 
 			//YOUR 2 FUNTIONS:
 			Ray r = c.getPrimaryRay(x, y);
-			Vec3 color = rayTracing(r, 1, 1.0);
+			//Vec3 color = rayTracing(r, 1, 1.0);
+
+			//Ray cameraSpaceRay = Ray(c.eye, Vec3(px, py, 1.0f));
+
+			//printf("px value is %g and py is %g \n" , px, py);
+
+			//Vec3 color;
+
+			int depth = 0;
+
+
+			Vec3 focalVecs = c.at - c.eye;
+			float focaldistance = focalVecs.module();
+			//Color blend(0, 0, 0, 0);
+
+
+			//float halfWidth = focaldistance * tan(c.angle / 2);
+
+			Vec3 blend = color;
+			//para nff test focusPoint = focaldistance-0.55;
+			float focusPoint = focaldistance -0.65;
+
+			int samples = 36;
+			float discRadius = 1;
+
+
+			//Stratified Sampling i.e. Random sampling (with 16 samples) inside each pixel to add DOF
+			for (int i = 0; i < samples; i++)
+			{
+				//random values between [-1,1]
+				float rw = -1 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1 - (-1)))); //funciona
+				float rh = -1 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1 - (-1)))); //funciona
+				Vec3 P = c.eye + r.direction * focusPoint;
+
+				//SbVec3f start = camera.getCameraPosition() - (r / 2)*u - (r / 2)*v + r * (du)*u + r * (dv)*v;
+
+				Vec3 start = c.eye - Vec3((discRadius / 2) - discRadius + rw, (discRadius / 2) - discRadius + rh, 0.0f);
+
+				Vec3 dir = P - start;
+
+				Ray ray = Ray(start, dir.normalize());
+				//ray = c.getPrimaryRay(x+dx, y+dy);
+
+				//Calling the phong shader to render the scene
+				//blend += phongShader(scene, ray, depth, output);
+				blend = blend + rayTracing(ray, 1, 1.0);
+			}
+
+			blend = blend / samples;
+			//printf("\n%g value of blend\n", blend);
+			color = blend;
+			//color = (color + blend)/20;
+
+
+			// YOUR 2 FUNTIONS:
+			//Ray r = c.getPrimaryRay(x, y);
+			//Vec3 color = rayTracing(r, 1, 1.0);
 
 			vertices[index_pos++] = (float)x;
 			vertices[index_pos++] = (float)y;
 			colors[index_col++] = (float)color.x;
 			colors[index_col++] = (float)color.y;
 			colors[index_col++] = (float)color.z;
+			
+			pixels[thisone].r = color.x;
+			pixels[thisone].g = color.y;
+			pixels[thisone].b = color.z;
 
-			if (draw_mode == 0) {  // desenhar o conteúdo da janela ponto a ponto
+			if (draw_mode == 0) {  // desenhar o conteï¿½do da janela ponto a ponto
 				drawPoints();
 				index_pos = 0;
 				index_col = 0;
 			}
 		}
-		printf("line %d\n", y);
-		if (draw_mode == 1) {  // desenhar o conteúdo da janela linha a linha
+		//printf("line %d\n", y);
+		if (draw_mode == 1) {  // desenhar o conteï¿½do da janela linha a linha
 			drawPoints();
 			index_pos = 0;
 			index_col = 0;
 		}
 	}
 
-	if (draw_mode == 2) //preenchar o conteúdo da janela com uma imagem completa
+	
+
+	if (draw_mode == 2) //preenchar o conteï¿½do da janela com uma imagem completa
 		drawPoints();
 
 	printf("Terminou!\n");
+	
+	saveBMP("scene.bmp", RES_X, RES_Y, dpi, pixels);
+
+	clock_t end = clock();
+	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	printf("Tempo de execucao: %lf s\n", time_spent);
 }
 
 void cleanup()
@@ -500,13 +995,7 @@ void setResolution() {
 
 void setSphere() {
 
-	while (num_spheres < MAX_SPHERES) {
-		if (sphere[num_spheres][0] == NULL && sphere[num_spheres][1] == NULL && sphere[num_spheres][2] == NULL && sphere[num_spheres][3] == NULL && sphere[num_spheres][4] == NULL && sphere[num_spheres][5] == NULL && sphere[num_spheres][6] == NULL) {
-			break;
-		}
-		num_spheres++;
-	}
-
+	printf("NUM ESFERAS: %d\n", num_spheres);
 	if (fscanf(nff, "%g %g %g %g", &sphere[num_spheres][0], &sphere[num_spheres][1], &sphere[num_spheres][2], &sphere[num_spheres][3]) != 0) {
 		sphere[num_spheres][4] = latestF[0];
 		sphere[num_spheres][5] = latestF[1];
@@ -517,15 +1006,26 @@ void setSphere() {
 		sphere[num_spheres][10] = latestF[6];
 		sphere[num_spheres][11] = latestF[7];
 		printf("SPHERE %d: %g %g %g %g  SHINE %g\n", num_spheres, sphere[num_spheres][0], sphere[num_spheres][1], sphere[num_spheres][2], sphere[num_spheres][3], sphere[num_spheres][9]);
+		num_spheres++;
+
 	}
 }
 
 void setPlane() {
-	while (num_planes < MAX_PLANES) {
-		if (plane[num_planes][0] == NULL) {
-			break;
-		}
-		num_planes++;
+
+	if (fscanf(nff, " 3 %g %g %g", &triangle[num_triangles][0], &triangle[num_triangles][1], &triangle[num_triangles][2]) != 0) {
+		fscanf(nff, "%g %g %g", &triangle[num_triangles][3], &triangle[num_triangles][4], &triangle[num_triangles][5]);
+		fscanf(nff, "%g %g %g", &triangle[num_triangles][6], &triangle[num_triangles][7], &triangle[num_triangles][8]);
+		triangle[num_triangles][9] = latestF[0];
+		triangle[num_triangles][10] = latestF[1];
+		triangle[num_triangles][11] = latestF[2];
+		triangle[num_triangles][12] = latestF[3];
+		triangle[num_triangles][13] = latestF[4];
+		triangle[num_triangles][14] = latestF[5];
+		triangle[num_triangles][15] = latestF[6];
+		triangle[num_triangles][16] = latestF[7];
+		printf("FOUND TRIANGLE NUMBER - %d\n", num_triangles);
+		num_triangles++;
 	}
 
 	if (fscanf(nff, "l %g %g %g %g %g %g %g %g %g", &plane[num_planes][0], &plane[num_planes][1], &plane[num_planes][2], &plane[num_planes][3], &plane[num_planes][4], &plane[num_planes][5], &plane[num_planes][6], &plane[num_planes][7], &plane[num_planes][8]) != 0) {
@@ -538,7 +1038,9 @@ void setPlane() {
 		plane[num_planes][15] = latestF[6];
 		plane[num_planes][16] = latestF[7];
 		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g  SHINE %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8], plane[num_planes][14]);
+		num_planes++;
 	}
+
 }
 
 void setLight() {
@@ -570,14 +1072,14 @@ void init(int argc, char* argv[])
 }
 
 int main(int argc, char* argv[])
-{	
-	// Test Sphere
-	//s = Sphere(Vec3( 0 , 0 , 0), 1, Vec3(0.078, 1, 0.207));
-
+{
 	char ch;
+	srand(time(NULL));
 
-	nff = fopen("input_file_test.nff", "r");
+	//nff = fopen("mount_low.nff", "r");
 	//nff = fopen("input_file_test.nff", "r");
+	//nff = fopen("mount_medium.nff", "r");
+	nff = fopen("balls_low.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
@@ -647,17 +1149,17 @@ int main(int argc, char* argv[])
 	//c = Camera(Vec3(2.1, 1.3, 1.7),Vec3(0,0,0),Vec3(0,0,1), (double)45, RES_X, RES_Y);
 	c.print();
 
-	if (draw_mode == 0) { // desenhar o conteúdo da janela ponto a ponto
+	if (draw_mode == 0) { // desenhar o conteï¿½do da janela ponto a ponto
 		size_vertices = 2 * sizeof(float);
 		size_colors = 3 * sizeof(float);
 		printf("DRAWING MODE: POINT BY POINT\n");
 	}
-	else if (draw_mode == 1) { // desenhar o conteúdo da janela linha a linha
+	else if (draw_mode == 1) { // desenhar o conteï¿½do da janela linha a linha
 		size_vertices = 2 * RES_X * sizeof(float);
 		size_colors = 3 * RES_X * sizeof(float);
 		printf("DRAWING MODE: LINE BY LINE\n");
 	}
-	else if (draw_mode == 2) { // preencher o conteúdo da janela com uma imagem completa
+	else if (draw_mode == 2) { // preencher o conteï¿½do da janela com uma imagem completa
 		size_vertices = 2 * RES_X*RES_Y * sizeof(float);
 		size_colors = 3 * RES_X*RES_Y * sizeof(float);
 		printf("DRAWING MODE: FULL IMAGE\n");
@@ -676,6 +1178,7 @@ int main(int argc, char* argv[])
 
 	init(argc, argv);
 	glutMainLoop();
+
 	exit(EXIT_SUCCESS);
 }
 ///////////////////////////////////////////////////////////////////////

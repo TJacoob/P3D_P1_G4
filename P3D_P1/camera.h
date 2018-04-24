@@ -7,29 +7,29 @@
 struct Camera
 {
 public:
-	
+
 	Vec3 eye, at, up;		// Initializing vectors
 	float angle, view;  // Angle of vision and distance from camera to plane
 
 	int ResX, ResY;			// Initial Resolutions
 	float width, height;
-	
-	Vec3 xe, ye, ze;		// Camera vectors in world coordinates
-	
 
-	// Construtores
-	Camera() : eye(Vec3(0,0,0)), at(Vec3(0,0,0)), up(Vec3(0,0,1)), angle(0), ResX(1), ResY(1) {};
+	Vec3 xe, ye, ze;		// Camera vectors in world coordinates
+
+
+							// Construtores
+	Camera() : eye(Vec3(0, 0, 0)), at(Vec3(0, 0, 0)), up(Vec3(0, 0, 1)), angle(0), ResX(1), ResY(1) {};
 	Camera(Vec3 eye, Vec3 at, Vec3 up, float angle, int ResX, int ResY) : eye(eye), at(at), up(up), angle(angle), ResX(ResX), ResY(ResY) {
 		view = (at - eye).module();
 		height = 2 * view * tan(angle / 2);	   // Distance * hipotenusa de metade do angulo
 		width = height * (ResX / ResY);
 
 		// Conversion to camera coordinates
-		ze = (eye - at) * ( 1/ (eye - at).module() );
+		ze = (eye - at) * (1 / (eye - at).module());
 		xe = (up*ze) * (1 / (up*ze).module());
 		ye = ze * xe;
 	};
-	
+
 	// Setters
 	void setEye(Vec3 e) { eye = e; };
 	void setAt(Vec3 a) { at = a; };
@@ -48,10 +48,47 @@ public:
 	// Methods
 	Ray getPrimaryRay(double x, double y)
 	{
-		Vec3 dx = xe.normalize() * width * ((float)( (x / ResX) - 0.5));
-		Vec3 dy = ye.normalize() * height * ((float)( (y / ResY) - 0.5));
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 0.5));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 0.5));
 		Vec3 dz = ze.normalize() * (-view);
-		return Ray(eye, (dz+dy+dx).normalize());
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+
+	// Monte Carlo Method
+	Ray getTopLeft(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 1));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 0));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+	Ray getTopRight(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 0));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 0));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+	Ray getBottomLeft(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 1));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 1));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+	Ray getBottomRight(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 0));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 1));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
+	}
+	Ray getCenter(double x, double y)
+	{
+		Vec3 dx = xe.normalize() * width * ((float)((x / ResX) - 0.5));
+		Vec3 dy = ye.normalize() * height * ((float)((y / ResY) - 0.5));
+		Vec3 dz = ze.normalize() * (-view);
+		return Ray(eye, (dz + dy + dx).normalize());
 	}
 
 	void print() {
