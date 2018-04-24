@@ -71,8 +71,7 @@ public:
 	}
 
 	void print() {
-		printf("ESFERA:\n");
-		printf("CENTRO EM: %f %f %f - RAIO: %f\n", center.x, center.y, center.z, radius);
+		printf("ESFERA - CENTRO: %f %f %f - RAIO: %f\n", center.x, center.y, center.z, radius);
 	}
 
 

@@ -68,7 +68,7 @@ public:
 		for (int i = 0; i < num_spheres; i++) {
 			Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
 			BBox obj = s.bbox;
-			//obj.print();
+			obj.print();		// Shows working Bounding Box
 			//s.print();
 			int index;
 
@@ -87,7 +87,7 @@ public:
 					for (int ix = ixmin; ix <= ixmax; ix++)
 					{
 						index = ix * n.x + iy * n.y + iz * n.z;
-						printf("Index: %d\n", index);
+						//printf("Index: %d\n", index);
 						//cells[index].push_back(Object(i, 0));
 						
 						if (cells[index].isEmpty())
@@ -113,34 +113,81 @@ public:
 					}
 		}
 
-		
-		
-
-		/*
-		// Repetir para os triangulos :|
-		for (int k = 0; k <= num_triangles; k++) {
+		// Same but for triangles
+		for (int k = 0; k < num_triangles; k++) {
 			Triangle t(Vec3(triangle[k][0], triangle[k][1], triangle[k][2]), Vec3(triangle[k][3], triangle[k][4], triangle[k][5]), Vec3(triangle[k][6], triangle[k][7], triangle[k][8]), Vec3(triangle[k][9], triangle[k][10], triangle[k][11]), triangle[k][12], triangle[k][13], triangle[k][14], triangle[k][15], triangle[k][16]);
 			BBox obj = t.bbox;
+			obj.print();		// Shows working Bounding Box
+								//s.print();
+			int index;
 
-			int ixmin = clamp((obj.p0.x - p0.x) * nx / (p1.x - p0.x), 0, nx - 1);
-			int iymin = clamp((obj.p0.y - p0.y) * ny / (p1.y - p0.y), 0, ny - 1);
-			int izmin = clamp((obj.p0.z - p0.z) * nz / (p1.z - p0.z), 0, nz - 1);
-			int ixmax = clamp((obj.p1.x - p0.x) * nx / (p1.x - p0.x), 0, nx - 1);
-			int iymax = clamp((obj.p1.y - p0.y) * ny / (p1.y - p0.y), 0, ny - 1);
-			int izmax = clamp((obj.p1.z - p0.z) * nz / (p1.z - p0.z), 0, nz - 1);
+			//printf("erro aqui: obj.p0: %f p0: %f p1: %f ny: %f\n", obj.p0.y, p0.y, p1.y, n.y);
 
+			int ixmin = (int)clamp((obj.p0.x - p0.x) * n.x / (p1.x - p0.x), 0, n.x - 1);
+			int iymin = (int)clamp((obj.p0.y - p0.y) * n.y / (p1.y - p0.y), 0, n.y - 1);
+			int izmin = (int)clamp((obj.p0.z - p0.z) * n.z / (p1.z - p0.z), 0, n.z - 1);
+			int ixmax = (int)clamp((obj.p1.x - p0.x) * n.x / (p1.x - p0.x), 0, n.x - 1);
+			int iymax = (int)clamp((obj.p1.y - p0.y) * n.y / (p1.y - p0.y), 0, n.y - 1);
+			int izmax = (int)clamp((obj.p1.z - p0.z) * n.z / (p1.z - p0.z), 0, n.z - 1);
+
+			//printf("ixmin: %d, iymin: %d, izmin: %d\n", ixmin, iymin, izmin);
 			for (int iz = izmin; iz <= izmax; iz++)
 				for (int iy = iymin; iy <= iymax; iy++)
 					for (int ix = ixmin; ix <= ixmax; ix++)
 					{
-						int index = ix + nx * iy + nx * ny * iz;
-						cells[index].push_back(Object(k, 0));
+						index = ix * n.x + iy * n.y + iz * n.z;
+						//printf("Index: %d\n", index);
+						//cells[index].push_back(Object(i, 0));
+
+						if (cells[index].isEmpty())
+						{	// Quando ainda nao existe nada na cell, criamos um objeto
+							Object o = Object();
+							o.addObject(k, 1);		// Type 1 for triangles
+							cells.at(index) = o;
+							//printf("Adicionada a esfera de centro (%f, %f, %f) e raio %d", s.center.x, s.center.y, s.center.z, s.radius);
+							//printf(" no index: %d\n", index);
+							//counts[index] += 1;
+						}
+						else
+						{	// Quando já existe um objeto, adicionamos-lhe um elemento
+							// Mas que não seja repetido!!
+							if (!cells[index].alreadyExists(k))
+							{
+								//printf("Adicionada a esfera de centro (%f, %f, %f) e raio %d", s.center.x, s.center.y, s.center.z, s.radius);
+								//printf(" no index: %d\n", index);
+								cells[index].addObject(k, 1);
+							}
+							//counts[index] += 1;
+						}
 					}
-
 		}
-		*/
 
-
+		// Correr cada célula para mostrar os objetos lá existentes
+		for (int index = 0; index < num_cells; index++)
+		{
+			if (cells[index].isNotEmpty())
+			{
+				printf("CELL %d\n", index);
+				for (int unit = 0; unit < cells[index].units; unit++)
+				{
+					int i = cells[index].getIndex(unit);
+					if (cells[index].getType(unit) == 0)
+					{
+						Sphere s(Vec3(sphere[i][0], sphere[i][1], sphere[i][2]), sphere[i][3], Vec3(sphere[i][4], sphere[i][5], sphere[i][6]), sphere[i][7], sphere[i][8], sphere[i][9], sphere[i][10], sphere[i][11]);
+						s.print();
+					}
+					if (cells[index].getType(unit) == 1)
+					{
+						Triangle t(Vec3(triangle[i][0], triangle[i][1], triangle[i][2]), Vec3(triangle[i][3], triangle[i][4], triangle[i][5]), Vec3(triangle[i][6], triangle[i][7], triangle[i][8]), Vec3(triangle[i][9], triangle[i][10], triangle[i][11]), triangle[i][12], triangle[i][13], triangle[i][14], triangle[i][15], triangle[i][16]);
+						t.print();
+					}
+				}
+			}
+			else
+			{
+				printf("Cell %d is empty\n", index);
+			}
+		};
 	}
 
 	Vec3 get_minP()

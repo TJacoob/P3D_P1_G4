@@ -51,6 +51,16 @@ public:
 		else
 			return false;
 	}
+
+	int getIndex(int i)
+	{
+		return index[i];
+	}
+
+	int getType(int i)
+	{
+		return type[i];
+	}
 };
 
 #endif 

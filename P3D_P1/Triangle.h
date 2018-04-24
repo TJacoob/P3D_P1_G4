@@ -82,6 +82,9 @@ public:
 		return (u * v).normalize();
 	}
 
+	void print() {
+		printf("TRIANGULO - Point1: (%f,%f,%f) - Point2: (%f,%f,%f) - Point3: (%f,%f,%f)\n", point1.x, point1.y, point1.z, point2.x, point2.y, point2.z, point3.x, point3.y, point3.z);
+	}
 };
 
 #endif

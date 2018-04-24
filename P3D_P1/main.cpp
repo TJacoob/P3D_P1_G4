@@ -162,7 +162,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	bool intersect = false;
 
-	/*
+	
 	// REGULAR INTERSECTION MODEL - CHECK BELOW FOR GRID MODEL
 	//PLANE INTERSECTION CYCLE
 	if (num_planes != 0)
@@ -248,15 +248,12 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 	}
 
 	// END OF REGULAR MODEL!!!
+	
+	/*
+	// UNIFORM GRID MODEL -> Not working
+	shortT = grid.hit(ray);
+	printf("ShortT: %f\n", shortT);
 	*/
-
-	// UNIFORM GRID MODEL
-	if (true)		//so pra condensar codigo-remover pra entrega
-	{	
-		shortT = grid.hit(ray);
-		printf("ShortT: %f\n", shortT);
-		
-	}
 
 	if (intersect)
 	{
@@ -360,7 +357,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		//printf("%g %g %g \n\n ", assistantColor.x, assistantColor.y, assistantColor.z);
 
 		if (depth >= MAX_DEPTH) {
-			printf("depth: %d\n", depth);
+			//printf("depth: %d\n", depth);
 			return c;
 		}
 
@@ -1076,10 +1073,10 @@ int main(int argc, char* argv[])
 	char ch;
 	srand(time(NULL));
 
-	//nff = fopen("mount_low.nff", "r");
+	nff = fopen("mount_low.nff", "r");
 	//nff = fopen("input_file_test.nff", "r");
 	//nff = fopen("mount_medium.nff", "r");
-	nff = fopen("balls_low.nff", "r");
+	//nff = fopen("balls_medium.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
