@@ -3,6 +3,7 @@
 #ifndef _TRIANGLEH_
 #define _TRIANGLEH_
 
+
 struct Triangle
 {
 public:
@@ -10,8 +11,9 @@ public:
 	Vec3 point1, point2, point3;
 	Vec3 color;
 	float Kdif, Ks, Shine, Trans, IndexRef;		// Difuse and Specular components
+	BBox bbox;
 
-	Triangle(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 c, float kdif, float ks, float shine, float trans, float indexRef) : point1(p1), point2(p2), point3(p3), color(c), Kdif(kdif), Ks(ks), Shine(shine), Trans(trans), IndexRef(indexRef) {};
+	Triangle(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 c, float kdif, float ks, float shine, float trans, float indexRef) : point1(p1), point2(p2), point3(p3), color(c), Kdif(kdif), Ks(ks), Shine(shine), Trans(trans), IndexRef(indexRef) { calcBBox(); };
 
 	float intersect(Ray ray) const {
 		// Source: http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
@@ -55,6 +57,22 @@ public:
 			return(0);
 
 
+	}
+
+	void calcBBox()
+	{
+		float x0, x1, y0, y1, z0, z1;
+
+		x0 = std::min(std::min(point1.x, point2.x), point3.x);
+		x1 = std::max(std::min(point1.x, point2.x), point3.x);
+
+		y0 = std::min(std::min(point1.y, point2.y), point3.y);
+		y1 = std::max(std::min(point1.y, point2.y), point3.y);
+
+		z0 = std::min(std::min(point1.z, point2.z), point3.z);
+		z1 = std::max(std::min(point1.z, point2.z), point3.z);
+
+		bbox = BBox(Vec3(x0, y0, z0), Vec3(x1, y1, z1));
 	}
 
 	Vec3 getNormal()	// � independente do ponto de interesec��o pq a normal � igual ao longo de todo o triangulo

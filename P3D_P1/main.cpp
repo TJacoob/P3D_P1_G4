@@ -20,6 +20,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+#include "main.h"
 #include "Vec3.h"
 #include "Ray.h"
 #include "Camera.h"
@@ -29,6 +30,9 @@
 #include "Triangle.h"
 #include "AreaLight.h"
 #include "RGBType.h"
+#include "Object.h"
+#include "BBox.h"
+#include "Grid.h"
 
 #define CAPTION "ray tracer"
 
@@ -36,9 +40,7 @@
 #define COLOR_ATTRIB 1
 
 #define MAX_DEPTH 6
-#define MAX_SPHERES 15000
 #define MAX_PLANES 5
-#define MAX_TRIANGLES 10000
 #define MAX_LIGHTS 5
 
 #define BIAS 0.01
@@ -76,23 +78,19 @@ Camera c;
 // Other Helpers
 Vec3 background;
 
-// Spheres Array
-float sphere[MAX_SPHERES][12];
-int num_spheres = 0;
-
 // Planes Array
 float plane[MAX_PLANES][17];
 int num_planes = 0;
-
-// TRIANGLES Array
-float triangle[MAX_TRIANGLES][17];
-int num_triangles = 0;
 
 // Lights Array
 float light[MAX_LIGHTS][6];	// X Y Z R G B
 int num_lights = 0;
 
 float latestF[8];
+
+// Grid
+
+Grid grid;
 
 /* Draw Mode: 0 - point by point; 1 - line by line; 2 - full frame */
 int draw_mode = 0;
@@ -164,6 +162,8 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 	bool intersect = false;
 
+	/*
+	// REGULAR INTERSECTION MODEL - CHECK BELOW FOR GRID MODEL
 	//PLANE INTERSECTION CYCLE
 	if (num_planes != 0)
 	{
@@ -247,9 +247,19 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 		}
 	}
 
+	// END OF REGULAR MODEL!!!
+	*/
+
+	// UNIFORM GRID MODEL
+	if (true)		//so pra condensar codigo-remover pra entrega
+	{	
+		shortT = grid.hit(ray);
+		printf("ShortT: %f\n", shortT);
+		
+	}
+
 	if (intersect)
 	{
-		//printf("TIPO INTERSECT: %d\n", tipoIntersect);
 		Vec3 hitpoint = (ray.origin + ray.direction*shortT).normalize();		// Falta voltar a resolver o self-shadowing
 
 																				// Cor come�a em preto e vamos adicionando a cor de cada objecto
@@ -737,6 +747,8 @@ void renderScene()
 {
 	clock_t begin = clock();
 
+	grid = Grid();
+
 	int dpi = 72;
 
 	RGBType *pixels = new RGBType[RES_Y*RES_X];
@@ -1067,7 +1079,7 @@ int main(int argc, char* argv[])
 	//nff = fopen("mount_low.nff", "r");
 	//nff = fopen("input_file_test.nff", "r");
 	//nff = fopen("mount_medium.nff", "r");
-	nff = fopen("show.nff", "r");
+	nff = fopen("balls_low.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
