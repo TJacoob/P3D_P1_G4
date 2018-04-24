@@ -28,6 +28,7 @@
 #include "Light.h"
 #include "Triangle.h"
 #include "AreaLight.h"
+#include "RGBType.h"
 
 #define CAPTION "ray tracer"
 
@@ -54,6 +55,8 @@ float *vertices;
 
 int size_vertices;
 int size_colors;
+
+int thisone;
 
 GLfloat m[16];  //projection matrix initialized by ortho function
 
@@ -257,6 +260,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 
 		for (int h = 0; h < num_lights; h++)
 		{
+			//printf("Num lights is %d\n", num_lights);
 			/* Point Based Lights
 			Light ls = Light(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]));
 
@@ -269,20 +273,20 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			Ray shadowRay = Ray(shadowRayC.getPoint(BIAS), L);
 
 			if (normal.dot(L) > 0) {
-				if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
-				{
-					Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
-					Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
+			if (!rayIntersect(shadowRay)) // Nao ha interseccao com nada - shadow ray not blocked
+			{
+			Vec3 difuse = (ls.color*Kdif*(std::max(0.f, normal.dot(L))));
+			Vec3 specular = (ls.color*Ks*pow(normal.dot(H), shine));
 
-					//printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
-					//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
+			//printf("DIFUSE: %f %f %f\n", difuse.x, difuse.y, difuse.z);
+			//printf("SPECULAR: %f %f %f\n", specular.x, specular.y, specular.z);
 
-					LightsContribution = LightsContribution + difuse + specular;
-				}
-				else // Caminho obstruido por um objeto, suposto haver sombra?
-				{
-					//printf("Caminho obstru�do\n");
-				}
+			LightsContribution = LightsContribution + difuse + specular;
+			}
+			else // Caminho obstruido por um objeto, suposto haver sombra?
+			{
+			//printf("Caminho obstru�do\n");
+			}
 			}
 
 			//printf("------------\n");
@@ -296,7 +300,7 @@ Vec3 rayTracing(Ray ray, int depth, float RefrIndex)
 			// A principal alteração é que vamos alterar um pouco o sitio que tomamos como "centro" da luz quando lançamos um raio
 			// Fazemos esta alterações com valores aleatórios várias vezes e fazemos a média
 			AreaLight ls = AreaLight(Vec3(light[h][0], light[h][1], light[h][2]), Vec3(light[h][3], light[h][4], light[h][5]), Vec3(1, 0, 0), Vec3(1, 0, 0));	// These two last vectors should be reviewed
-			Vec3 areaLightContribution = Vec3(0,0,0);
+			Vec3 areaLightContribution = Vec3(0, 0, 0);
 
 			for (int a = 0; a < LIGHT_SAMPLES; a++)
 			{
@@ -423,16 +427,16 @@ Vec3 monteCarlo(double x, double y, int division)
 	mcMatrix[2] = rayTracing(c.getBottomLeft(x, y), 1, 1.0);
 	mcMatrix[3] = rayTracing(c.getBottomRight(x, y), 1, 1.0);
 
-	printf("MCMatrix: (%f, %f, %f), (%f, %f, %f)\n          (%f, %f, %f), (%f, %f, %f)\n", mcMatrix[0].x, mcMatrix[0].y, mcMatrix[0].z, mcMatrix[1].x, mcMatrix[1].y, mcMatrix[1].z, mcMatrix[2].x, mcMatrix[2].y, mcMatrix[2].z, mcMatrix[3].x, mcMatrix[3].y, mcMatrix[3].z );
+	printf("MCMatrix: (%f, %f, %f), (%f, %f, %f)\n          (%f, %f, %f), (%f, %f, %f)\n", mcMatrix[0].x, mcMatrix[0].y, mcMatrix[0].z, mcMatrix[1].x, mcMatrix[1].y, mcMatrix[1].z, mcMatrix[2].x, mcMatrix[2].y, mcMatrix[2].z, mcMatrix[3].x, mcMatrix[3].y, mcMatrix[3].z);
 
 	// if colors are within threshold
 	// Question: should the diff be between all colors? Or just the ones on the left and bottom?
 	Vec3 diffVec;
-	float diff=0;
+	float diff = 0;
 
 	for (int j = 0; j < 3; j++)
 	{
-		for (int h = j+1; h < 3; h++)
+		for (int h = j + 1; h < 3; h++)
 		{
 			//printf("Iter\n");
 			diffVec = mcMatrix[j] - mcMatrix[h];
@@ -465,7 +469,7 @@ Vec3 monteCarlo(double x, double y, int division)
 		//printf("Repartir\n");
 		// Limit Recursion, return mean either way
 		if (division >= MAX_DEPTH)
-		{ 
+		{
 			color.x = (mcMatrix[0].x + mcMatrix[1].x + mcMatrix[2].x + mcMatrix[3].x) / 4;
 			color.y = (mcMatrix[0].y + mcMatrix[1].y + mcMatrix[2].y + mcMatrix[3].y) / 4;
 			color.y = (mcMatrix[0].z + mcMatrix[1].z + mcMatrix[2].z + mcMatrix[3].z) / 4;
@@ -476,10 +480,10 @@ Vec3 monteCarlo(double x, double y, int division)
 		for (int i = 0; i < 4; i++)
 		{
 			// call monteCarlo on each division
-			double newPixelX = x + (1/pow(2,division));		// 40+1/2 -> 40+1/4 -> 40+1/8
-			double newPixelY = y + (1/pow(2,division));		
+			double newPixelX = x + (1 / pow(2, division));		// 40+1/2 -> 40+1/4 -> 40+1/8
+			double newPixelY = y + (1 / pow(2, division));
 			printf("New Pixels: %f, %f\n", newPixelX, newPixelY);
-			color = monteCarlo( newPixelX, newPixelY, division+1);
+			color = monteCarlo(newPixelX, newPixelY, division + 1);
 		}
 
 		return color;
@@ -494,18 +498,18 @@ Vec3 monteCarlo(double x, double y, int division)
 Vec3 jitter(double x, double y)
 {
 	Vec3 color = Vec3();
-	for (int p = 0; p < JITTER_MATRIX-1; p++)
+	for (int p = 0; p < JITTER_MATRIX - 1; p++)
 	{
-		for (int q = 0; q < JITTER_MATRIX-1; q++)
+		for (int q = 0; q < JITTER_MATRIX - 1; q++)
 		{
 			double jit = r2();
 			//printf("JIT: %g\n", jit);
-			Vec3 newPixel = rayTracing(c.getPrimaryRay(x+((p+jit)/JITTER_MATRIX), y + ((q + jit) / JITTER_MATRIX)), 1, 1.0);
+			Vec3 newPixel = rayTracing(c.getPrimaryRay(x + ((p + jit) / JITTER_MATRIX), y + ((q + jit) / JITTER_MATRIX)), 1, 1.0);
 			//color = color + (newPixel / (JITTER_MATRIX*JITTER_MATRIX));
 			color = color + newPixel;
 		}
 	}
-	color = color / (JITTER_MATRIX*JITER_MATRIX);
+	color = color / ((JITTER_MATRIX - 1)*(JITER_MATRIX- 1));
 	return color;
 };
 
@@ -659,11 +663,84 @@ void drawPoints()
 
 /////////////////////////////////////////////////////////////////////// CALLBACKS
 
+
+void saveBMP(const char *filename, int x, int y, int dpi, RGBType *data) {
+	FILE *f;
+	int k = x * y;
+	int s = 4 * k;
+	int filesize = 54 + s;
+
+	double factor = 39.375;
+	int m = static_cast<int>(factor);
+
+	int ppm = dpi * m;
+
+	unsigned char bmpfileheader[14] = { 'B', 'M', 0,0,0,0, 0,0,0,0, 54,0,0,0 };
+	unsigned char bmpinfoheader[40] = { 40,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,24,0};
+
+	bmpfileheader[ 2] = (unsigned char)(filesize);
+	bmpfileheader[ 3] = (unsigned char)(filesize>>8);
+	bmpfileheader[ 4] = (unsigned char)(filesize>>16);
+	bmpfileheader[ 5] = (unsigned char)(filesize>>24);
+
+	bmpinfoheader[ 4] = (unsigned char)(x);
+	bmpinfoheader[ 5] = (unsigned char)(x>>8);
+	bmpinfoheader[ 6] = (unsigned char)(x>>16);
+	bmpinfoheader[ 7] = (unsigned char)(x>>24);
+
+	bmpinfoheader[ 8] = (unsigned char)(y);
+	bmpinfoheader[ 9] = (unsigned char)(y >> 8);
+	bmpinfoheader[ 10] = (unsigned char)(y >> 16);
+	bmpinfoheader[ 11] = (unsigned char)(y >> 24);
+
+	bmpinfoheader[21] = (unsigned char)(s);
+	bmpinfoheader[22] = (unsigned char)(s >> 8);
+	bmpinfoheader[23] = (unsigned char)(s >> 16);
+	bmpinfoheader[24] = (unsigned char)(s >> 24);
+
+	bmpinfoheader[25] = (unsigned char)(ppm);
+	bmpinfoheader[26] = (unsigned char)(ppm >> 8);
+	bmpinfoheader[27] = (unsigned char)(ppm >> 16);
+	bmpinfoheader[28] = (unsigned char)(ppm >> 24);
+
+	bmpinfoheader[29] = (unsigned char)(ppm);
+	bmpinfoheader[30] = (unsigned char)(ppm >> 8);
+	bmpinfoheader[31] = (unsigned char)(ppm >> 16);
+	bmpinfoheader[32] = (unsigned char)(ppm >> 24);
+
+	f = fopen(filename, "wb");
+
+	fwrite(bmpfileheader, 1, 14, f);
+	fwrite(bmpinfoheader, 1, 40, f);
+
+	for (int i = 0; i < k; i++) {
+		RGBType rgb = data[i];
+
+		float red = (data[i].r) * 255;
+		float green = (data[i].g) * 255;
+		float blue = (data[i].b) * 255;
+
+		unsigned char color[3] = { (int)floor(blue), (int)floor(green) , (int)floor(red) };
+
+		fwrite(color, 1, 3, f);
+
+	}
+
+	fclose(f);
+
+}
+
+
 // Render function by primary ray casting from the eye towards the scene's objects
 
 void renderScene()
 {
 	clock_t begin = clock();
+
+	int dpi = 72;
+
+	RGBType *pixels = new RGBType[RES_Y*RES_X];
+	int n = RES_X * RES_Y;
 
 	int index_pos = 0;
 	int index_col = 0;
@@ -672,9 +749,70 @@ void renderScene()
 	{
 		for (int x = 0; x < RES_X; x++)
 		{
+			thisone = y * RES_X + x;
+
+			
+
+
 			// ANTI ALIASING
 			//Vec3 color = monteCarlo(x, y, 1);
 			Vec3 color = jitter(x, y);
+
+			//YOUR 2 FUNTIONS:
+			Ray r = c.getPrimaryRay(x, y);
+			//Vec3 color = rayTracing(r, 1, 1.0);
+
+			//Ray cameraSpaceRay = Ray(c.eye, Vec3(px, py, 1.0f));
+
+			//printf("px value is %g and py is %g \n" , px, py);
+
+			//Vec3 color;
+
+			int depth = 0;
+
+
+			Vec3 focalVecs = c.at - c.eye;
+			float focaldistance = focalVecs.module();
+			//Color blend(0, 0, 0, 0);
+
+
+			//float halfWidth = focaldistance * tan(c.angle / 2);
+
+			Vec3 blend = color;
+			//para nff test focusPoint = focaldistance-0.55;
+			float focusPoint = focaldistance -0.65;
+
+			int samples = 36;
+			float discRadius = 1;
+
+
+			//Stratified Sampling i.e. Random sampling (with 16 samples) inside each pixel to add DOF
+			for (int i = 0; i < samples; i++)
+			{
+				//random values between [-1,1]
+				float rw = -1 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1 - (-1)))); //funciona
+				float rh = -1 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1 - (-1)))); //funciona
+				Vec3 P = c.eye + r.direction * focusPoint;
+
+				//SbVec3f start = camera.getCameraPosition() - (r / 2)*u - (r / 2)*v + r * (du)*u + r * (dv)*v;
+
+				Vec3 start = c.eye - Vec3((discRadius / 2) - discRadius + rw, (discRadius / 2) - discRadius + rh, 0.0f);
+
+				Vec3 dir = P - start;
+
+				Ray ray = Ray(start, dir.normalize());
+				//ray = c.getPrimaryRay(x+dx, y+dy);
+
+				//Calling the phong shader to render the scene
+				//blend += phongShader(scene, ray, depth, output);
+				blend = blend + rayTracing(ray, 1, 1.0);
+			}
+
+			blend = blend / samples;
+			//printf("\n%g value of blend\n", blend);
+			color = blend;
+			//color = (color + blend)/20;
+
 
 			// YOUR 2 FUNTIONS:
 			//Ray r = c.getPrimaryRay(x, y);
@@ -685,6 +823,10 @@ void renderScene()
 			colors[index_col++] = (float)color.x;
 			colors[index_col++] = (float)color.y;
 			colors[index_col++] = (float)color.z;
+			
+			pixels[thisone].r = color.x;
+			pixels[thisone].g = color.y;
+			pixels[thisone].b = color.z;
 
 			if (draw_mode == 0) {  // desenhar o conte�do da janela ponto a ponto
 				drawPoints();
@@ -700,10 +842,14 @@ void renderScene()
 		}
 	}
 
+	
+
 	if (draw_mode == 2) //preenchar o conte�do da janela com uma imagem completa
 		drawPoints();
 
 	printf("Terminou!\n");
+	
+	saveBMP("scene.bmp", RES_X, RES_Y, dpi, pixels);
 
 	clock_t end = clock();
 	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
@@ -881,8 +1027,8 @@ void setPlane() {
 		plane[num_planes][16] = latestF[7];
 		printf("PLANE:\np1: %g %g %g\np2: %g %g %g\np3: %g %g %g  SHINE %g\n", plane[num_planes][0], plane[num_planes][1], plane[num_planes][2], plane[num_planes][3], plane[num_planes][4], plane[num_planes][5], plane[num_planes][6], plane[num_planes][7], plane[num_planes][8], plane[num_planes][14]);
 		num_planes++;
-	}	
-	
+	}
+
 }
 
 void setLight() {
@@ -921,7 +1067,7 @@ int main(int argc, char* argv[])
 	//nff = fopen("mount_low.nff", "r");
 	//nff = fopen("input_file_test.nff", "r");
 	//nff = fopen("mount_medium.nff", "r");
-	nff = fopen("balls_medium.nff", "r");
+	nff = fopen("show.nff", "r");
 	if (nff == NULL) {
 		return 0;
 	}
